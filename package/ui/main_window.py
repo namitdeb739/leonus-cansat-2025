@@ -2,6 +2,7 @@ from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QRect
 from package.models.app_info import AppInfo
+from package.models.telemetry import Telemetry
 from package.ui.header import Header
 from enum import Enum
 from package.ui.body import Body
@@ -26,6 +27,8 @@ class MainWindow(QMainWindow):
         layout.addWidget(self.body, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMaximumSize)
 
+        layout.setSpacing(0)
+
         self.setCentralWidget(central_widget)
 
     def setDevTypeGeometry(self, dev_type: str) -> None:
@@ -35,3 +38,7 @@ class MainWindow(QMainWindow):
         elif dev_type == MainWindow.DevType.LAPTOP:
             geometry = QRect(0, 0, 1440, 900)
         self.setGeometry(geometry)
+
+    def update(self, telemetry: Telemetry) -> None:
+        self.body.update(telemetry)
+        self.header.update(telemetry.header())

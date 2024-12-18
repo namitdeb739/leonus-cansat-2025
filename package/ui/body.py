@@ -1,9 +1,13 @@
-from PyQt6.QtWidgets import QWidget, QHBoxLayout, QSizePolicy, QVBoxLayout
-
+from PyQt6.QtWidgets import (
+    QWidget,
+    QHBoxLayout,
+    QSizePolicy,
+    QVBoxLayout,
+)
 from package.models.telemetry import (
     GPS,
     Command,
-    PricipalAxesCoordinate,
+    PrincipalAxesCoordinate,
     Telemetry,
     Mode,
     State,
@@ -28,9 +32,9 @@ class Body(QWidget):
             37.5,
             1003,
             3.7,
-            PricipalAxesCoordinate(1.0, 2.0, 3.0),
-            PricipalAxesCoordinate(1.0, 2.0, 3.0),
-            PricipalAxesCoordinate(1.0, 2.0, 3.0),
+            PrincipalAxesCoordinate(1.0, 2.0, 3.0),
+            PrincipalAxesCoordinate(1.0, 2.0, 3.0),
+            PrincipalAxesCoordinate(1.0, 2.0, 3.0),
             1.0,
             GPS("00:00:00", 750, 100, 10, 10),
             Command.command(
@@ -48,19 +52,32 @@ class Body(QWidget):
     def build_layout(self, telemetry: Telemetry) -> None:
         layout = QHBoxLayout()
 
-        layout.addLayout(sidebar := QVBoxLayout())
+        layout.addWidget(sidebar := QWidget())
+        sidebar.setLayout(sidebar_layout := QVBoxLayout())
+        sidebar.setSizePolicy(
+            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Expanding,
+        )
 
-        sidebar.addWidget(control_panel := ControlPanel())
-        control_panel.setSizePolicy(
+        self.control_panel = ControlPanel()
+        sidebar_layout.addWidget(self.control_panel)
+        self.control_panel.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Minimum,
         )
-        sidebar.addWidget(log := Log(telemetry))
-        log.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
+
+        self.log = Log(telemetry)
+        sidebar_layout.addWidget(self.log)
+        self.log.setSizePolicy(
+            QSizePolicy.Policy.Fixed,
             QSizePolicy.Policy.Expanding,
         )
 
-        layout.addWidget(GraphView())
+        self.graph_view = GraphView()
+        layout.addWidget(self.graph_view)
 
         self.setLayout(layout)
+
+    def update(self, telemetry: Telemetry) -> None:
+        self.log.update(telemetry)
+        self.graph_view.update(telemetry)

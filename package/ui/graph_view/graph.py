@@ -1,9 +1,7 @@
 from typing import Iterable
 import numpy as np
-import random
 import pyqtgraph as pg
 from package.config import Colours
-from PyQt6.QtCore import QTimer
 
 
 class Graph(pg.PlotItem):
@@ -27,48 +25,10 @@ class Graph(pg.PlotItem):
         self.num_lines = len(line_names)
         self.line_names = line_names
         self.graph_plots: list[pg.PlotDataItem] = []
-        self.graph_data: list[int] = []
+        self.graph_data: list[np.ndarray[float]] = []
         self.graph_value_labels: list[pg.TextItem] = []
         for i, line_name in enumerate(line_names):
             self.init_line(line_name, i)
-
-        # TODO: Use telemetry data instead
-        timer = QTimer(self)
-        timer.timeout.connect(self.update_rand)
-        timer.start(1000)
-        self.update_rand()
-
-    def update(self, value: int) -> None:
-        self.pointer += 1
-        self.getViewBox().setXRange(self.pointer, self.pointer + 20)
-        self.getViewBox().setYRange(0, self.graph_data[-1][-20:].max() * 1.25)
-
-        for i in range(self.num_lines):
-            self.graph_data[i] = np.append(
-                self.graph_data[i],
-                float(value),
-            )
-            self.graph_plots[i].setData(self.graph_data[i])
-
-            self.graph_value_labels[i].setText(
-                f"{self.line_names[i]}: {value}"
-            )
-
-    def update_rand(self) -> None:
-        self.pointer += 1
-        self.getViewBox().setXRange(self.pointer, self.pointer + 20)
-        self.getViewBox().setYRange(0, self.graph_data[-1][-20:].max() * 1.25)
-
-        for i in range(self.num_lines):
-            self.graph_data[i] = np.append(
-                self.graph_data[i],
-                value := float(random.randint(0, 10)),
-            )
-            self.graph_plots[i].setData(self.graph_data[i])
-
-            self.graph_value_labels[i].setText(
-                f"{self.line_names[i]}: {value}"
-            )
 
     def init_line(self, line_name: str, i: int) -> None:
         colour = (
@@ -93,3 +53,19 @@ class Graph(pg.PlotItem):
         graph_value_label.anchor(
             itemPos=(1, 0.1 + i * 0.15), parentPos=(1, 0.1 + i * 0.06)
         )
+
+    def update(self, value: list[int]) -> None:
+        self.pointer += 1
+        self.getViewBox().setXRange(self.pointer, self.pointer + 20)
+        self.getViewBox().setYRange(0, self.graph_data[-1][-20:].max() * 1.25)
+
+        for i in range(self.num_lines):
+            self.graph_data[i] = np.append(
+                self.graph_data[i],
+                float(value[i]),
+            )
+            self.graph_plots[i].setData(self.graph_data[i])
+
+            self.graph_value_labels[i].setText(
+                f"{self.line_names[i]}: {value[i]}"
+            )

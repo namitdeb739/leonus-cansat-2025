@@ -38,7 +38,7 @@ class State(Enum):
 
 
 @dataclass
-class PricipalAxesCoordinate:
+class PrincipalAxesCoordinate:
     roll: float
     pitch: float
     yaw: float
@@ -56,7 +56,7 @@ class GPS:
     sats: int
 
     def __str__(self) -> str:
-        return f"{self.time}, ({self.latitude}°N, {self.longitude}°E), \
+        return f"UTC {self.time}, ({self.latitude}°N, {self.longitude}°E), \
             {self.altitude}m, {self.sats}"
 
 
@@ -188,9 +188,12 @@ class Telemetry:
     temperature: float
     pressure: float
     voltage: float
-    gyro: PricipalAxesCoordinate
-    acceleration: PricipalAxesCoordinate
-    magnetometer: PricipalAxesCoordinate
+    gyro: PrincipalAxesCoordinate
+    acceleration: PrincipalAxesCoordinate
+    magnetometer: PrincipalAxesCoordinate
     auto_gyro_rotation_rate: int
     gps: GPS
     cmd_echo: Command
+
+    def header(self) -> tuple[str, int]:
+        return self.mission_time, self.packet_count

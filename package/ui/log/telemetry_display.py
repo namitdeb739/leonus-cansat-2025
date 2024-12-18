@@ -30,18 +30,18 @@ class TelemetryDisplay(QWidget):
             f"<b>Gyro:</b> {self.telemetry.gyro}°s<sup>-2</sup>"
         )
         self.acceleration = QLabel(
-            f"<b>Acceleration:</b> \
+            f"<b>Acc.:</b> \
                 {self.telemetry.acceleration}ms<sup>-2</sup>"
         )
         self.magnetometer = QLabel(
-            f"<b>Magnetometer:</b> {self.telemetry.magnetometer}G"
+            f"<b>Mag.:</b> {self.telemetry.magnetometer}G"
         )
         self.auto_gryro_rotation_rate = QLabel(
-            f"<b>Auto Gyro Rotation Rate:</B> \
+            f"<b>Gyro Rot. Rate:</B> \
                 {self.telemetry.auto_gyro_rotation_rate}°s<sup>-2</sup>"
         )
         self.gps = QLabel(
-            f"<b>GPS (Time, Co-Ord., Alt., Sat. No.):</B> \
+            f"<b>GPS:</b> \
                 {self.telemetry.gps}"
         )
         self.cmd_echo: QLabel = QLabel(
@@ -71,7 +71,7 @@ class TelemetryDisplay(QWidget):
                         label, i, j, 1, 2, alignment=Qt.AlignmentFlag.AlignLeft
                     )
                     label.setSizePolicy(
-                        QSizePolicy.Policy.Minimum,
+                        QSizePolicy.Policy.Maximum,
                         QSizePolicy.Policy.Minimum,
                     )
                     continue
@@ -79,7 +79,7 @@ class TelemetryDisplay(QWidget):
                     label, i, j, alignment=Qt.AlignmentFlag.AlignLeft
                 )
                 label.setSizePolicy(
-                    QSizePolicy.Policy.Minimum,
+                    QSizePolicy.Policy.Fixed,
                     QSizePolicy.Policy.Minimum,
                 )
 
@@ -87,3 +87,34 @@ class TelemetryDisplay(QWidget):
         layout.setSpacing(0)
 
         self.setLayout(layout)
+
+    def update(self, telemetry: Telemetry) -> None:
+        self.mission_time.setText(f"<b>Time:</b> UTC {telemetry.mission_time}")
+        self.packet_count.setText(
+            f"<b>Packet Count:</b> {telemetry.packet_count}"
+        )
+        self.mode.setText(f"<b>Mode:</b> {telemetry.mode}")
+        self.state.setText(f"<b>State:</b> {telemetry.state}")
+        self.altitude.setText(f"<b>Altitude:</b> {telemetry.altitude}m")
+        self.temperature.setText(
+            f"<b>Temperature:</b> {telemetry.temperature}°C"
+        )
+        self.pressure.setText(f"<b>Pressure:</b> {telemetry.pressure}kPa")
+        self.voltage.setText(f"<b>Voltage:</b> {telemetry.voltage}V")
+        self.gyro.setText(f"<b>Gyro:</b> {telemetry.gyro}°s<sup>-2</sup>")
+        self.acceleration.setText(
+            f"<b>Acc.:</b> \
+                {telemetry.acceleration}ms<sup>-2</sup>"
+        )
+        self.magnetometer.setText(
+            f"<b>Mag.:</b> {telemetry.magnetometer}G"
+        )
+        self.auto_gryro_rotation_rate.setText(
+            f"<b>Gyro Rot. Rate:</B> \
+                {telemetry.auto_gyro_rotation_rate}°s<sup>-2</sup>"
+        )
+        self.gps.setText(
+            f"<b>GPS:</b> \
+                {telemetry.gps}"
+        )
+        self.cmd_echo.setText(f"<b>Command Echo:</b> {telemetry.cmd_echo}")

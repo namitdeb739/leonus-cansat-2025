@@ -12,6 +12,7 @@ MainWindow {
 
 QWidget {
   color: #020612;
+  /* border: 1px solid #020612; */
 }
 
 Header > QWidget {

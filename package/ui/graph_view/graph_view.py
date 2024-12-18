@@ -1,5 +1,7 @@
 from PyQt6.QtWidgets import QSizePolicy
 from PyQt6.QtCore import QSize
+
+from package.models.telemetry import Telemetry
 from .graph import Graph
 import pyqtgraph as pg
 
@@ -24,26 +26,56 @@ class GraphView(pg.GraphicsView):
     def build_layout(self) -> pg.GraphicsLayout:
         layout = pg.GraphicsLayout()
 
-        graph_layout = [
+        self.altitude = Graph("Altitude / m", ["Altitude"])
+        self.temperature = Graph("Temperature / °C", ["Temperature"])
+        self.pressure = Graph("Pressure / kPa", ["Pressure"])
+        self.voltage = Graph("Voltage / V", ["Voltage"])
+        self.gyro = Graph("Gyro / °s<sup>-2</sup>", ["Roll", "Pitch", "Yaw"])
+        self.acceleration = Graph(
+            "Acceleration / °s<sup>-2</sup>", ["Roll", "Pitch", "Yaw"]
+        )
+        self.magnetometer = Graph("Magnetometer / G", ["Roll", "Pitch", "Yaw"])
+        self.gyro_rot_rate = Graph(
+            "Gyro Rot. Rate / °s<sup>-1</sup>",
+            ["Gyro Rot. Rate"],
+        )
+
+        self.graph_layout = [
+            [self.altitude, self.temperature, self.pressure, self.voltage],
             [
-                ("Altitude / m", ["Altitude"]),
-                ("Temperature / °C", ["Temperature"]),
-                ("Pressure / kPa", ["Pressure"]),
-                ("Voltage / V", ["Voltage"]),
-            ],
-            [
-                ("Gyro / °s<sup>-2</sup>", ["Roll", "Pitch", "Yaw"]),
-                ("Acceleration / °s<sup>-2</sup>", ["Roll", "Pitch", "Yaw"]),
-                ("Magnetometer / G", ["Roll", "Pitch", "Yaw"]),
-                (
-                    "Gyro Rot. Rate / °s<sup>-1</sup>",
-                    ["Gyro Rot. Rate"],
-                ),
+                self.gyro,
+                self.acceleration,
+                self.magnetometer,
+                self.gyro_rot_rate,
             ],
         ]
 
-        for i, row in enumerate(graph_layout):
-            for j, (graph, line_names) in enumerate(row):
-                layout.addItem(Graph(graph, line_names), i, j)
+        for i, row in enumerate(self.graph_layout):
+            for j, graph in enumerate(row):
+                layout.addItem(graph, i, j)
 
         return layout
+
+    def update(self, telemetry: Telemetry) -> None:
+        self.altitude.update([telemetry.altitude])
+        self.temperature.update([telemetry.temperature])
+        self.pressure.update([telemetry.pressure])
+        self.voltage.update([telemetry.voltage])
+        self.gyro.update(
+            [telemetry.gyro.roll, telemetry.gyro.pitch, telemetry.gyro.yaw]
+        )
+        self.acceleration.update(
+            [
+                telemetry.acceleration.roll,
+                telemetry.acceleration.pitch,
+                telemetry.acceleration.yaw,
+            ]
+        )
+        self.magnetometer.update(
+            [
+                telemetry.magnetometer.roll,
+                telemetry.magnetometer.pitch,
+                telemetry.magnetometer.yaw,
+            ]
+        )
+        self.gyro_rot_rate.update([telemetry.auto_gyro_rotation_rate])

@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QTimer, QTime
+from PyQt6.QtCore import Qt, QTime
 from PyQt6.QtWidgets import QLabel, QWidget, QHBoxLayout
 from PyQt6.QtWidgets import QSpacerItem, QSizePolicy
 
@@ -19,25 +19,15 @@ class Header(QWidget):
             QSizePolicy.Policy.Fixed,
         )
 
-        # TODO: Use telemetry timer instead
-        timer = QTimer(self)
-        timer.timeout.connect(self.update_time)
-        timer.timeout.connect(self.update_packet)
-        timer.start(1000)
-        self.update_time()
-        self.update_packet()
-
-    # TODO: Use telemetry timer instead
-    def update_time(self) -> None:
-        self.time.setText(QTime.currentTime().toString("hh:mm:ss"))
-
-    # TODO: Replace with telemetry packet
-    def update_packet(self) -> None:
-        self.packet += 1
-        self.packet_label.setText(f"Packet: {self.packet}")
+    def update(self, header: tuple[str, int]) -> None:
+        time, packet = header
+        self.time.setText(time)
+        self.packet_label.setText(f"Packet: {packet}")
 
     def build_layout(self, app_info: AppInfo) -> QHBoxLayout:
         layout = QHBoxLayout()
+
+        layout.setContentsMargins(0, 15, 0, 15)
 
         Header.add_label_with_space(
             layout,
@@ -55,7 +45,6 @@ class Header(QWidget):
             QSizePolicy.Policy.Maximum,
         )
 
-        # TODO: Use telemetry packet instead
         self.packet = 0
         self.packet_label = QLabel(f"Packet: {0}")
         layout.addWidget(
@@ -70,7 +59,6 @@ class Header(QWidget):
             )
         )
 
-        # TODO: Use telemetry timer instead
         self.time = QLabel(QTime.currentTime().toString("hh:mm:ss"))
         layout.addWidget(
             self.time,

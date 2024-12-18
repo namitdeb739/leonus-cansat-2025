@@ -24,9 +24,12 @@ class Log(QWidget):
         layout.addWidget(
             frame := QFrame(), alignment=Qt.AlignmentFlag.AlignHCenter
         )
+
+        frame.setFixedSize(int(1440 * 0.34), int(900 * 0.25))
+        self.frame = frame
         frame.setLayout(frame_layout := QVBoxLayout())
         frame.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding
         )
         frame.setContentsMargins(0, 0, 0, 0)
         frame_layout.setSpacing(0)
@@ -41,6 +44,10 @@ class Log(QWidget):
             QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Expanding
         )
 
-        frame_layout.addWidget(TelemetryDisplay(telemetry))
+        self.telemetry_display = TelemetryDisplay(telemetry)
+        frame_layout.addWidget(self.telemetry_display)
 
         self.setLayout(layout)
+
+    def update(self, telemetry: Telemetry) -> None:
+        self.telemetry_display.update(telemetry)
