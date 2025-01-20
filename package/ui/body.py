@@ -14,7 +14,7 @@ from package.models.telemetry import (
 )
 from .graph_view.graph_view import GraphView
 from .control_panel.control_panel import ControlPanel
-from .log.log import Log
+from .telemetry_display.log import Log
 
 
 class Body(QWidget):
@@ -23,7 +23,9 @@ class Body(QWidget):
         super().__init__()
         self.setObjectName("Body")
 
+        # TODO: Fix initialisation
         telemetry = Telemetry(
+            1,
             "00:00:00",
             1,
             Mode.FLIGHT,

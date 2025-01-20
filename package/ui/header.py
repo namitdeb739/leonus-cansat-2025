@@ -1,4 +1,4 @@
-from PyQt6.QtCore import Qt, QTime
+from PyQt6.QtCore import Qt
 from PyQt6.QtWidgets import QLabel, QWidget, QHBoxLayout
 from PyQt6.QtWidgets import QSpacerItem, QSizePolicy
 
@@ -11,6 +11,7 @@ class Header(QWidget):
         super().__init__()
         self.setObjectName("Header")
 
+        self.team_id = app_info.team_info.team_id
         layout = self.build_layout(app_info)
         self.setLayout(layout)
 
@@ -19,8 +20,9 @@ class Header(QWidget):
             QSizePolicy.Policy.Fixed,
         )
 
-    def update(self, header: tuple[str, int]) -> None:
-        time, packet = header
+    def update(self, header: tuple[int, str, int]) -> None:
+        team_id, time, packet = header
+        self.team_id.setText(f"Team ID: {team_id}")
         self.time.setText(time)
         self.packet_label.setText(f"Packet: {packet}")
 
@@ -29,12 +31,16 @@ class Header(QWidget):
 
         layout.setContentsMargins(0, 15, 0, 15)
 
-        Header.add_label_with_space(
-            layout,
-            f"Team ID: {app_info.team_info.team_id}",
-            Qt.AlignmentFlag.AlignLeft,
-            15,
-            QSizePolicy.Policy.Minimum,
+        self.team_id = 0
+        self.team_id = QLabel(f"Team ID: {0}")
+        layout.addWidget(self.team_id, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addSpacerItem(
+            QSpacerItem(
+                15,
+                20,
+                QSizePolicy.Policy.Minimum,
+                QSizePolicy.Policy.Minimum,
+            )
         )
 
         Header.add_label_with_space(
@@ -59,7 +65,7 @@ class Header(QWidget):
             )
         )
 
-        self.time = QLabel(QTime.currentTime().toString("hh:mm:ss"))
+        self.time = QLabel("00:00:00")
         layout.addWidget(
             self.time,
             Qt.AlignmentFlag.AlignRight,

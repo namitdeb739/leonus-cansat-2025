@@ -57,7 +57,9 @@ class Graph(pg.PlotItem):
     def update(self, value: list[int]) -> None:
         self.pointer += 1
         self.getViewBox().setXRange(self.pointer, self.pointer + 20)
-        self.getViewBox().setYRange(0, self.graph_data[-1][-20:].max() * 1.25)
+        self.getViewBox().setYRange(
+            0, max(data[-20:].max() for data in self.graph_data) * 1.25
+        )
 
         for i in range(self.num_lines):
             self.graph_data[i] = np.append(

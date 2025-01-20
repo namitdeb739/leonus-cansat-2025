@@ -63,6 +63,16 @@ ControlPanel > QFrame QPushButton:checked {
   border-radius: 5px;
 }
 
+.flash-button {
+  background-color: #ef7c00;
+  color: #020612;
+  font-size: 14px;
+  text-align: center;
+  border: 2px solid #020612;
+  padding: 10px;
+  border-radius: 5px;
+}
+
 QLineEdit {
   background-color: #dfdede;
   color: #020612;
@@ -100,14 +110,4 @@ Log > QFrame > TelemetryDisplay > QLabel {
   font-size: 14px;
   text-align: center;
   font-weight: normal;
-}
-
-.flash-button {
-  background-color: #ef7c00;
-  color: #020612;
-  font-size: 12px;
-  text-align: center;
-  border: 2px solid #020612;
-  padding: 10px;
-  border-radius: 5px;
 }

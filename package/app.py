@@ -1,19 +1,13 @@
-import random
-import time
+import atexit
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
+from package.communication import Communication
 from package.models.app_info import AppInfo
-from package.models.telemetry import (
-    GPS,
-    Mode,
-    PrincipalAxesCoordinate,
-    State,
-    Telemetry,
-)
 from package.ui.main_window import MainWindow
 import os
 import pyqtgraph as pg
 from package.config import Colours
+import package.plotter as plotter
 
 
 class App(QApplication):
@@ -26,7 +20,8 @@ class App(QApplication):
         )
         self.main_window.setDevTypeGeometry(dev_type)
 
-        self.packet = 0  # TODO: Remove
+        self.communication = Communication()
+        atexit.register(self.on_exit)
 
     def load_stylesheet(self) -> None:
         stylesheet = os.path.join(
@@ -39,41 +34,8 @@ class App(QApplication):
         pg.setConfigOption("foreground", Colours.RICH_BLACK.value)
 
     def update(self) -> None:
-        self.packet += 1  # TODO: Remove
-        telemetry = Telemetry(
-            mission_time=time.strftime("%H:%M:%S", time.localtime()),
-            packet_count=self.packet,
-            mode=Mode.FLIGHT,
-            state=State.ASCENT,
-            altitude=(altitude := round(random.uniform(0, 1000), 1)),
-            temperature=round(random.uniform(0, 100), 1),
-            pressure=round(random.uniform(0, 1000), 1),
-            voltage=round(random.uniform(0, 100), 1),
-            gyro=PrincipalAxesCoordinate(
-                roll=round(random.uniform(0, 360), 1),
-                pitch=round(random.uniform(0, 360), 1),
-                yaw=round(random.uniform(0, 360), 1),
-            ),
-            acceleration=PrincipalAxesCoordinate(
-                roll=round(random.uniform(0, 360), 1),
-                pitch=round(random.uniform(0, 360), 1),
-                yaw=round(random.uniform(0, 360), 1),
-            ),
-            magnetometer=PrincipalAxesCoordinate(
-                roll=round(random.uniform(0, 360), 1),
-                pitch=round(random.uniform(0, 360), 1),
-                yaw=round(random.uniform(0, 360), 1),
-            ),
-            auto_gyro_rotation_rate=round(random.uniform(0, 100), 1),
-            gps=GPS(
-                time=time.strftime("%H:%M:%S", time.localtime()),
-                altitude=altitude,
-                latitude=round(random.uniform(0, 360), 1),
-                longitude=round(random.uniform(0, 360), 1),
-                sats=random.randint(0, 100),
-            ),
-            cmd_echo=None,
-        )
+        data = self.communication.recieve()
+        telemetry = self.communication.parse_data(data)
         self.main_window.update(telemetry)
 
     def run(self) -> int:
@@ -84,3 +46,8 @@ class App(QApplication):
         self.timer.start(1000)
 
         return self.exec()
+
+    def on_exit(self) -> None:
+        plotter.generate_plots(
+            self.communication.start_time, self.communication.csv_file
+        )

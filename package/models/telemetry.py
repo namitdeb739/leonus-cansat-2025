@@ -180,6 +180,7 @@ class MechanismActuationCommand(Command):
 
 @dataclass
 class Telemetry:
+    team_id: int
     mission_time: str
     packet_count: int
     mode: Mode
@@ -195,5 +196,5 @@ class Telemetry:
     gps: GPS
     cmd_echo: Command
 
-    def header(self) -> tuple[str, int]:
-        return self.mission_time, self.packet_count
+    def header(self) -> tuple[int, str, int]:
+        return self.team_id, self.mission_time, self.packet_count

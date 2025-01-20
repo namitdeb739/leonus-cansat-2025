@@ -55,3 +55,8 @@ def watchlaptop(c: Context) -> None:
 @task
 def watchmonitor(c: Context) -> None:
     c.run("python watch.py monitor", pty=True)
+
+
+@task
+def clearlogs(c: Context) -> None:
+    c.run("rm -rf logs/*", pty=True)
