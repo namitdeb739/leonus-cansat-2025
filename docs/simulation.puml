@@ -1,0 +1,20 @@
+@startuml simulation
+
+actor User
+participant "Communication" as Comm
+participant "App" as App
+participant "GUI" as GUI
+participant "CSV File" as CSV
+participant "OBC" as OBC
+participant "TXT File" as TxtFile
+
+User -> GUI: Enter Simulated Pressure data
+GUI -> Comm: Send Simulated Pressure data
+TxtFile -> Comm: Send Simulated Pressure data
+OBC -> Comm: Receive data string
+Comm -> Comm: Parse all received data into Telemetry object
+Comm -> App: Send Telemetry
+App -> GUI: Display Telemetry
+Comm -> CSV: Log Telemetry data
+
+@enduml

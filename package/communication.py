@@ -8,8 +8,9 @@ import random
 class Communication:
     def __init__(self) -> None:
         self.packet_count = 0
+        self.team_id = 1234
         self.start_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
-        self.csv_file = f"logs/{self.start_time}/telemetry.csv"
+        self.csv_file = f"logs/{self.start_time}/Flight_{self.team_id}.csv"
         self.initialise_csv()
 
     # TODO: Implement connection to cansat for recieving data
@@ -22,7 +23,6 @@ class Communication:
         GPS_TIME, GPS_ALTITUDE, GPS_LATITUDE, GPS_LONGITUDE, GPS_SATS,
         CMD_ECHO [,,OPTIONAL_DATA]
         """
-        team_id = 1234
         mission_time = time.strftime("%H:%M:%S", time.localtime())
         self.packet_count += 1
         mode = random.choice(["F", "S"])
@@ -57,7 +57,7 @@ class Communication:
         gps_sats = random.randint(0, 100)
         cmd_echo = ""
 
-        return f"{team_id},\
+        return f"{self.team_id},\
             {mission_time},\
             {self.packet_count},\
             {mode},\

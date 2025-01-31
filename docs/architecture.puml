@@ -1,0 +1,64 @@
+@startuml architecture
+
+class "Communication" {
+    .. Details ..
+    Handles data reception
+    Parses and logs telemetry data
+    into .csv files
+}
+
+class "plotter" {
+    .. Details ..
+    Plots telemetry data from
+    .csv files
+}
+
+package models {
+    class "Telemetry" {
+        .. Details ..
+        Represents telemetry data
+        Contains data fields
+        and methods for
+        parsing and logging
+    }
+    "Communication" --> "Telemetry": Creates
+
+    class "AppInfo" {
+        .. Details ..
+        Represents application info
+        and constants such as Team
+        Name and ID
+    }
+}
+
+package GUI {
+    object GUI {
+        .. Details ..
+        Represents the GUI
+        (treated as a singleton)
+        Contains widgets for
+        displaying telemetry data
+        and plotting
+    }
+}
+
+class "App" {
+    .. Details ..
+    Main application class
+    Initializes and runs the app
+    Manages GUI and communication
+}
+"App" --> "Communication": Calls
+"App" --> "plotter": Calls (on exit)
+"App" --> "AppInfo": Contains
+"App" --> GUI: "Displays \nTelemetry Data"
+
+object main {
+    .. Details ..
+    Main entry point
+    Creates and runs the app
+}
+main --> "App": Runs
+
+
+@enduml

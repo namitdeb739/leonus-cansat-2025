@@ -2,7 +2,7 @@ from enum import Enum
 
 
 class Colours(Enum):
-    SILVER = "#dfdede"
+    SILVER = "#fefefe"
     NUS_BLUE = "#003d7c"
     NUS_ORANGE = "#ef7c00"
     RICH_BLACK = "#020612"

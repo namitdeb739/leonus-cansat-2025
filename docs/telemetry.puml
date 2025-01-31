@@ -1,0 +1,45 @@
+@startuml telemetry
+
+class Telemetry {
+    int team_id
+    str mission_time
+    int packet_count
+    Mode mode
+    State state
+    float altitude
+    float temperature
+    float pressure
+    float voltage
+    PrincipalAxesCoordinate gyro
+    PrincipalAxesCoordinate acceleration
+    PrincipalAxesCoordinate magnetometer
+    int auto_gyro_rotation_rate
+    GPS gps
+    Command cmd_echo
+}
+
+class PrincipalAxesCoordinate {
+    float roll
+    float pitch
+    float yaw
+}
+
+class GPS {
+    float time
+    float altitude
+    float latitude
+    float longitude
+    int sats
+}
+
+class Command {
+    .. Details ..
+    Encapsulates details relating
+    to specific commands
+}
+
+PrincipalAxesCoordinate --> Telemetry: Contains
+GPS --> Telemetry: Contains
+Command --> Telemetry: Contains
+
+@enduml

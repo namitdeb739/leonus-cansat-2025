@@ -1,5 +1,5 @@
 /* :root {
-  --silver: #dfdede;
+  --silver: #fefefe;
   --nus-blue: #003d7c;
   --nus-orange: #ef7c00;
   --rich-black: #020612;
@@ -7,7 +7,7 @@
 } */
 
 MainWindow {
-  background-color: #dfdede;
+  background-color: #fefefe;
 }
 
 QWidget {
@@ -17,7 +17,7 @@ QWidget {
 
 Header > QWidget {
   background-color: #003d7c;
-  color: #dfdede;
+  color: #fefefe;
   font-size: 16px;
   font-weight: bold;
   padding: 10px;
@@ -45,7 +45,7 @@ ControlPanel > QFrame QLabel {
 
 ControlPanel > QFrame QPushButton {
   background-color: #003d7c;
-  color: #dfdede;
+  color: #fefefe;
   font-size: 14px;
   text-align: center;
   border: 2px solid #020612;
@@ -74,7 +74,7 @@ ControlPanel > QFrame QPushButton:checked {
 }
 
 QLineEdit {
-  background-color: #dfdede;
+  background-color: #fefefe;
   color: #020612;
   border: 1px solid #020612;
   border-radius: 3px;

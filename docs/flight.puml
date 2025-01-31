@@ -1,0 +1,16 @@
+@startuml flight
+
+participant OBC
+
+participant "Communication" as Comm
+participant "App" as App
+participant "GUI" as GUI
+participant "CSV File" as CSV
+
+OBC -> Comm: Receive data string
+Comm -> Comm: Parse data into Telemetry object
+Comm -> App: Send Telemetry
+App -> GUI: Display Telemetry
+Comm -> CSV: Log Telemetry data
+
+@enduml
