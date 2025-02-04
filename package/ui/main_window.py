@@ -1,6 +1,7 @@
 from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
 from PyQt6.QtCore import Qt
 from PyQt6.QtCore import QRect
+from package.communication import Communication
 from package.models.app_info import AppInfo
 from package.models.telemetry import Telemetry
 from package.ui.header import Header
@@ -13,7 +14,9 @@ class MainWindow(QMainWindow):
         MONITOR = "monitor"
         LAPTOP = "laptop"
 
-    def __init__(self, app_info: AppInfo) -> None:
+    def __init__(
+        self, app_info: AppInfo, communication: Communication
+    ) -> None:
         super().__init__()
         self.setObjectName("MainWindow")
 
@@ -22,7 +25,7 @@ class MainWindow(QMainWindow):
         central_widget, layout = QWidget(), QVBoxLayout()
         central_widget.setLayout(layout)
         self.header = Header(app_info)
-        self.body = Body()
+        self.body = Body(communication)
         layout.addWidget(self.header, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.addWidget(self.body, alignment=Qt.AlignmentFlag.AlignHCenter)
         layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMaximumSize)

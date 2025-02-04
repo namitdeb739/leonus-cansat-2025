@@ -15,12 +15,16 @@ class App(QApplication):
         super().__init__(sys_argv)
         self.load_stylesheet()
 
+        self.app_info = AppInfo(
+            3171, "LeoNUS", "Cansat Telemetry & Ground Control"
+        )
+        self.communication = Communication(self.app_info.team_info.team_id)
         self.main_window = MainWindow(
-            AppInfo(1, "LeoNUS", "Cansat Telemetry & Ground Control")
+            self.app_info,
+            self.communication,
         )
         self.main_window.setDevTypeGeometry(dev_type)
 
-        self.communication = Communication()
         atexit.register(self.on_exit)
 
     def load_stylesheet(self) -> None:
@@ -35,6 +39,8 @@ class App(QApplication):
 
     def update(self) -> None:
         data = self.communication.recieve()
+        if data is None:
+            return
         telemetry = self.communication.parse_data(data)
         self.main_window.update(telemetry)
 

@@ -8,13 +8,19 @@ from PyQt6.QtWidgets import (
     QSpacerItem,
 )
 from PyQt6.QtCore import Qt
+from package.communication import Communication
+from package.models.telemetry import (
+    SimulationMode,
+)
 from package.ui.control_panel.control_section import ControlSection
 
 
 class ModeControl(ControlSection):
-    def __init__(self):
+    def __init__(self, communication: Communication) -> None:
         super().__init__()
         self.setObjectName("ModeControl")
+
+        self.communication = communication
 
         self.activate_flight_mode = QPushButton("Activate Flight Mode")
         ControlSection.build_button(
@@ -81,21 +87,27 @@ class ModeControl(ControlSection):
         self.enable_simulation_mode.setChecked(False)
         self.activate_simulation_mode.setChecked(False)
         self.activate_simulation_mode.setEnabled(False)
+        self.communication.simulation_mode_control(SimulationMode.DISABLE)
 
     def press_enable_simulation_mode(self) -> None:
         if self.enable_simulation_mode.isChecked():
             self.enable_simulation_mode.setChecked(True)
             self.activate_simulation_mode.setEnabled(True)
+            self.communication.simulation_mode_control(SimulationMode.ENABLE)
         else:
             self.enable_simulation_mode.setChecked(False)
             self.activate_simulation_mode.setEnabled(False)
             self.activate_simulation_mode.setChecked(False)
             self.activate_flight_mode.setChecked(True)
+            self.communication.simulation_mode_control(SimulationMode.DISABLE)
 
     def press_activate_simulation_mode(self) -> None:
         if self.activate_simulation_mode.isChecked():
             self.activate_simulation_mode.setChecked(True)
             self.activate_flight_mode.setChecked(False)
+            self.communication.simulation_mode_control(SimulationMode.ACTIVATE)
+
         else:
             self.activate_simulation_mode.setChecked(False)
             self.activate_flight_mode.setChecked(True)
+            self.communication.simulation_mode_control(SimulationMode.DISABLE)

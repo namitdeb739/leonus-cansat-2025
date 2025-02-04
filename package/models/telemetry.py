@@ -126,21 +126,23 @@ class SetTimeCommand(Command):
         return f"{self.type.value} {self.time}"
 
 
+class SimulationMode(Enum):
+    ENABLE = "ENABLE"
+    ACTIVATE = "ACTIVATE"
+    DISABLE = "DISABLE"
+
+    def __str__(self) -> str:
+        return self.value
+
+
 @dataclass
 class SimulationModeControlCommand(Command):
-    class SimulationMode(Enum):
-        ENABLE = "ENABLE"
-        ACTIVATE = "ACTIVATE"
-        DISABLE = "DISABLE"
-
-        def __str__(self) -> str:
-            return self.value
 
     mode: SimulationMode
 
     def __init__(self, mode: str) -> None:
         super().__init__(Command.CommandType.SIMULATION_MODE_CONTROL)
-        self.mode = SimulationModeControlCommand.SimulationMode(mode)
+        self.mode = SimulationMode(mode)
 
     def __str__(self) -> str:
         return f"{self.type.value} {self.mode}"

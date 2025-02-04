@@ -6,6 +6,8 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt
+
+from package.communication import Communication
 from .mode_control import ModeControl
 from .command_control import CommandControl
 
@@ -15,13 +17,13 @@ class ControlPanel(QWidget):
         TOP = "TOP"
         LEFT = "LEFT"
 
-    def __init__(self):
+    def __init__(self, commuinication: Communication) -> None:
         super().__init__()
         self.setObjectName("ControlPanel")
 
-        self.build_layout()
+        self.build_layout(commuinication)
 
-    def build_layout(self) -> None:
+    def build_layout(self, communication: Communication) -> None:
         self.setLayout(layout := QVBoxLayout())
         layout.setContentsMargins(0, 0, 0, 0)
         layout.setSpacing(0)
@@ -34,5 +36,5 @@ class ControlPanel(QWidget):
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
 
-        frame_layout.addWidget(ModeControl())
-        frame_layout.addWidget(CommandControl())
+        frame_layout.addWidget(ModeControl(communication))
+        frame_layout.addWidget(CommandControl(communication))

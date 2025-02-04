@@ -1,16 +1,23 @@
 import csv
 import os
 import time
-from package.models.telemetry import GPS, PrincipalAxesCoordinate, Telemetry
+from package.models.telemetry import (
+    GPS,
+    OnOff,
+    PrincipalAxesCoordinate,
+    SimulationMode,
+    Telemetry,
+)
 import random
 
 
 class Communication:
-    def __init__(self) -> None:
+    def __init__(self, team_id: int) -> None:
         self.packet_count = 0
-        self.team_id = 1234
+        self.team_id = team_id
         self.start_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         self.csv_file = f"logs/{self.start_time}/Flight_{self.team_id}.csv"
+        self.store_enabled = False
         self.initialise_csv()
 
     # TODO: Implement connection to cansat for recieving data
@@ -113,43 +120,44 @@ class Communication:
             cmd_echo,
         ) = [field.strip() for field in fields]
 
-        self.log_data(
-            telemetry := Telemetry(
-                team_id=int(team_id),
-                mission_time=mission_time,
-                packet_count=int(packet_count),
-                mode=mode,
-                state=state,
-                altitude=float(altitude),
-                temperature=float(temperature),
-                pressure=float(pressure),
-                voltage=float(voltage),
-                gyro=PrincipalAxesCoordinate(
-                    roll=float(gyro_r),
-                    pitch=float(gyro_p),
-                    yaw=float(gyro_y),
-                ),
-                acceleration=PrincipalAxesCoordinate(
-                    roll=float(accel_r),
-                    pitch=float(accel_p),
-                    yaw=float(accel_y),
-                ),
-                magnetometer=PrincipalAxesCoordinate(
-                    roll=float(mag_r),
-                    pitch=float(mag_p),
-                    yaw=float(mag_y),
-                ),
-                auto_gyro_rotation_rate=float(auto_gyro_rotation_rate),
-                gps=GPS(
-                    time=gps_time,
-                    altitude=float(gps_altitude),
-                    latitude=float(gps_latitude),
-                    longitude=float(gps_longitude),
-                    sats=int(gps_sats),
-                ),
-                cmd_echo=cmd_echo,
-            )
+        telemetry = Telemetry(
+            team_id=int(team_id),
+            mission_time=mission_time,
+            packet_count=int(packet_count),
+            mode=mode,
+            state=state,
+            altitude=float(altitude),
+            temperature=float(temperature),
+            pressure=float(pressure),
+            voltage=float(voltage),
+            gyro=PrincipalAxesCoordinate(
+                roll=float(gyro_r),
+                pitch=float(gyro_p),
+                yaw=float(gyro_y),
+            ),
+            acceleration=PrincipalAxesCoordinate(
+                roll=float(accel_r),
+                pitch=float(accel_p),
+                yaw=float(accel_y),
+            ),
+            magnetometer=PrincipalAxesCoordinate(
+                roll=float(mag_r),
+                pitch=float(mag_p),
+                yaw=float(mag_y),
+            ),
+            auto_gyro_rotation_rate=float(auto_gyro_rotation_rate),
+            gps=GPS(
+                time=gps_time,
+                altitude=float(gps_altitude),
+                latitude=float(gps_latitude),
+                longitude=float(gps_longitude),
+                sats=int(gps_sats),
+            ),
+            cmd_echo=cmd_echo,
         )
+
+        if self.store_enabled:
+            self.log_data(telemetry)
 
         return telemetry
 
@@ -218,3 +226,30 @@ class Communication:
                 data.cmd_echo,
             ]
             writer.writerow(row)
+
+    def send(self, data: str) -> None:
+        print(data)
+
+    def payload_telemetry(self, on_off: OnOff) -> None:
+        send_string = f"CMD, {self.team_id}, CX, {on_off}"
+        self.send(send_string)
+
+    def set_time(self, time: str) -> None:
+        send_string = f"CMD, {self.team_id}, ST, {time}"
+        self.send(send_string)
+
+    def simulation_mode_control(self, mode: SimulationMode) -> None:
+        send_string = f"CMD, {self.team_id}, SIM, {mode}"
+        self.send(send_string)
+
+    def simulate_pressure(self, pressure: float) -> None:
+        send_string = f"CMD, {self.team_id}, SIMP, {pressure}"
+        self.send(send_string)
+
+    def calibrate_altitude(self) -> None:
+        send_string = f"CMD, {self.team_id}, CAL"
+        self.send(send_string)
+
+    def mechanism_actuation(self, on_off: OnOff) -> None:
+        send_string = f"CMD, {self.team_id}, MA, {on_off}"
+        self.send(send_string)

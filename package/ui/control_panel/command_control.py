@@ -1,3 +1,4 @@
+import time
 from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
@@ -7,13 +8,17 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt, QTimer
 from PyQt6.QtGui import QIntValidator
+from package.communication import Communication
+from package.models.telemetry import OnOff
 from package.ui.control_panel.control_section import ControlSection
 
 
 class CommandControl(ControlSection):
-    def __init__(self):
+    def __init__(self, communication: Communication):
         super().__init__()
         self.setObjectName("CommandControl")
+
+        self.communication = communication
 
         self.enable_store = QPushButton("Enable Store")
         ControlSection.build_button(self.enable_store, self.press_enable_store)
@@ -134,6 +139,7 @@ class CommandControl(ControlSection):
 
         self.setLayout(layout)
 
+    @staticmethod
     def flash_button(button: QPushButton) -> None:
         button.setProperty("class", "flash-button")
         button.style().unpolish(button)
@@ -143,6 +149,7 @@ class CommandControl(ControlSection):
             500, lambda: CommandControl.remove_flash_class(button)
         )
 
+    @staticmethod
     def remove_flash_class(button: QPushButton) -> None:
         button.setProperty("class", "")
         button.style().unpolish(button)
@@ -151,40 +158,53 @@ class CommandControl(ControlSection):
     def press_enable_store(self) -> None:
         self.enable_store.setChecked(True)
         self.disable_store.setChecked(False)
+        self.communication.store_enabled = True
 
     def press_disable_store(self) -> None:
         self.enable_store.setChecked(False)
         self.disable_store.setChecked(True)
-
-    def press_set_gcs_time(self) -> None:
-        print("Set GCS Time")
-        CommandControl.flash_button(self.set_gcs_time)
-
-    def press_set_gps_time(self) -> None:
-        print("Set GPS Time")
-        CommandControl.flash_button(self.set_gps_time)
+        self.communication.store_enabled = False
 
     def press_payload_telemetry_on(self) -> None:
         self.payload_telemetry_on.setChecked(True)
         self.payload_telemetry_off.setChecked(False)
+        self.communication.payload_telemetry(OnOff.ON)
 
     def press_payload_telemetry_off(self) -> None:
         self.payload_telemetry_on.setChecked(False)
         self.payload_telemetry_off.setChecked(True)
+        self.communication.payload_telemetry(OnOff.OFF)
+
+    def press_set_gcs_time(self) -> None:
+        print("Set GCS Time")
+        CommandControl.flash_button(self.set_gcs_time)
+        self.communication.set_time(
+            time.strftime("%H:%M:%S", time.localtime())
+        )
+
+    def press_set_gps_time(self) -> None:
+        print("Set GPS Time")
+        CommandControl.flash_button(self.set_gps_time)
+        self.communication.set_time("GPS")
 
     def press_send_smulated_pressure(self) -> None:
-        print(f"Simulated Pressure: {self.simulated_pressure_input.text()}")
-        self.simulated_pressure_input.clear()
+        pressure = self.simulated_pressure_input.text()
+        print(f"Simulated Pressure: {pressure}")
         CommandControl.flash_button(self.send_simulated_pressure)
+        self.communication.simulate_pressure(pressure)
+        self.simulated_pressure_input.clear()
 
     def press_calibrate_altitude(self) -> None:
         print("Calibrate Altitude")
         CommandControl.flash_button(self.calibrate_altitude)
+        self.communication.calibrate_altitude()
 
     def press_mechanism_actuation_on(self) -> None:
         self.mechanism_actuation_on.setChecked(True)
         self.mechanism_actuation_off.setChecked(False)
+        self.communication.mechanism_actuation(OnOff.ON)
 
     def press_mechanism_actuation_off(self) -> None:
         self.mechanism_actuation_on.setChecked(False)
         self.mechanism_actuation_off.setChecked(True)
+        self.communication.mechanism_actuation(OnOff.OFF)

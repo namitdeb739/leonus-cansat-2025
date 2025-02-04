@@ -3,8 +3,8 @@ from dataclasses import dataclass
 
 @dataclass
 class TeamInfo:
-    team_id: int
-    team_name: str
+    team_id: int = 3171
+    team_name: str = "LeoNUS"
 
 
 @dataclass

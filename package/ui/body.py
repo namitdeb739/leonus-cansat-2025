@@ -4,6 +4,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
 )
+from package.communication import Communication
 from package.models.telemetry import (
     GPS,
     Command,
@@ -19,7 +20,7 @@ from .telemetry_display.log import Log
 
 class Body(QWidget):
 
-    def __init__(self) -> None:
+    def __init__(self, communication: Communication) -> None:
         super().__init__()
         self.setObjectName("Body")
 
@@ -44,14 +45,16 @@ class Body(QWidget):
             ),
         )
 
-        self.build_layout(telemetry)
+        self.build_layout(telemetry, communication)
 
         self.setSizePolicy(
             QSizePolicy.Policy.Expanding,
             QSizePolicy.Policy.Fixed,
         )
 
-    def build_layout(self, telemetry: Telemetry) -> None:
+    def build_layout(
+        self, telemetry: Telemetry, communication: Communication
+    ) -> None:
         layout = QHBoxLayout()
 
         layout.addWidget(sidebar := QWidget())
@@ -61,7 +64,7 @@ class Body(QWidget):
             QSizePolicy.Policy.Expanding,
         )
 
-        self.control_panel = ControlPanel()
+        self.control_panel = ControlPanel(communication)
         sidebar_layout.addWidget(self.control_panel)
         self.control_panel.setSizePolicy(
             QSizePolicy.Policy.Expanding,
