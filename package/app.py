@@ -1,8 +1,10 @@
 import atexit
+import time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 from package.communication import Communication
 from package.models.app_info import AppInfo
+from package.models.telemetry import OnOff
 from package.ui.main_window import MainWindow
 import os
 import pyqtgraph as pg
@@ -11,6 +13,7 @@ import package.plotter as plotter
 
 
 class App(QApplication):
+
     def __init__(self, sys_argv, dev_type: str) -> None:
         super().__init__(sys_argv)
         self.load_stylesheet()
@@ -40,20 +43,33 @@ class App(QApplication):
     def update(self) -> None:
         data = self.communication.recieve()
         if data is None:
+            print(f"{time.strftime('%H:%M:%S')} No data received")
             return
         telemetry = self.communication.parse_data(data)
         self.main_window.update(telemetry)
+
+        if (
+            self.communication.simulated_pressure_file_data is not None
+            or len(self.communication.simulated_pressure_file_data) > 0
+        ):
+            self.communication.send_simulated_pressure()
 
     def run(self) -> int:
         self.main_window.show()
 
         self.timer = QTimer()
         self.timer.timeout.connect(self.update)
-        self.timer.start(1000)
+        self.timer.start(250)
+
+        self.communication.payload_telemetry(OnOff.ON)
 
         return self.exec()
 
     def on_exit(self) -> None:
+        print("Handling exit")
+        self.communication.device.close()
         plotter.generate_plots(
             self.communication.start_time, self.communication.csv_file
         )
+        self.timer.stop()
+        self.quit()

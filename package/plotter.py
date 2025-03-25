@@ -5,6 +5,9 @@ from matplotlib.ticker import MaxNLocator
 
 def generate_plots(date_time: str, csv_file: str) -> None:
     data = pd.read_csv(csv_file)
+    if data.empty:
+        print("No data to plot")
+        return
 
     start_time = pd.to_datetime(
         data["MISSION_TIME"].iloc[0], format="%H:%M:%S"

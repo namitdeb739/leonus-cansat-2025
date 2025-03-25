@@ -6,6 +6,7 @@ from package.config import Colours
 
 class Graph(pg.PlotItem):
     LINE_COLOUR_ORDER = [Colours.RED, Colours.GREEN, Colours.NUS_BLUE]
+    TIME_VIEW = 60
 
     def __init__(self, title: str, line_names: Iterable[str]) -> None:
         super().__init__(
@@ -20,7 +21,9 @@ class Graph(pg.PlotItem):
         )
 
         self.pointer = 0
-        self.getViewBox().setXRange(self.pointer, self.pointer + 20)
+        self.getViewBox().setXRange(
+            self.pointer, self.pointer + Graph.TIME_VIEW
+        )
 
         self.num_lines = len(line_names)
         self.line_names = line_names
@@ -41,12 +44,14 @@ class Graph(pg.PlotItem):
                 pen=pg.mkPen(colour.value, width=3), name=line_name
             )
         )
-        self.graph_data.append(data := np.random.randint(0, 10, 20))
+        self.graph_data.append(data := np.array([]))
         plot.setData(data)
 
         self.graph_value_labels.append(
             graph_value_label := pg.LabelItem(
-                f"{line_name}: {data[-1]}", color=colour.value, size="12pt"
+                f"{line_name}: {data[-1] if len(data) > 0 else "NIL"}",
+                color=colour.value,
+                size="12pt",
             )
         )
         graph_value_label.setParentItem(self.graphicsItem())
@@ -55,10 +60,18 @@ class Graph(pg.PlotItem):
         )
 
     def update(self, value: list[int]) -> None:
-        self.pointer += 1
-        self.getViewBox().setXRange(self.pointer, self.pointer + 20)
+        if any([len(data) > Graph.TIME_VIEW for data in self.graph_data]):
+            self.pointer += 1
+        self.getViewBox().setXRange(
+            self.pointer, self.pointer + Graph.TIME_VIEW
+        )
         self.getViewBox().setYRange(
-            0, max(data[-20:].max() for data in self.graph_data) * 1.25
+            0,
+            max(
+                (data[-Graph.TIME_VIEW:].max() if len(data) > 0 else 100)
+                for data in self.graph_data
+            )
+            * 1.25,
         )
 
         for i in range(self.num_lines):

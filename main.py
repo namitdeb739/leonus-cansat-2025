@@ -12,4 +12,8 @@ if __name__ == "__main__":
     args = parser.parse_args()
 
     app = App(sys.argv, args.dev_type)
-    sys.exit(app.run())
+
+    try:
+        sys.exit(app.run())
+    except KeyboardInterrupt:
+        app.on_exit()

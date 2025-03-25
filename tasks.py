@@ -60,3 +60,8 @@ def watchmonitor(c: Context) -> None:
 @task
 def clearlogs(c: Context) -> None:
     c.run("rm -rf logs/*", pty=True)
+
+
+@task
+def makeplots(c: Context, csv: str) -> None:
+    c.run(f"python plot_maker.py {csv}", pty=True)

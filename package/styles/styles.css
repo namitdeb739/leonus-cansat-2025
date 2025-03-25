@@ -18,7 +18,7 @@ QWidget {
 Header > QWidget {
   background-color: #003d7c;
   color: #fefefe;
-  font-size: 16px;
+  font-size: 14px;
   font-weight: bold;
   padding: 10px;
   border-radius: 15px;
@@ -38,7 +38,7 @@ ControlPanel > QFrame QWidget {
 ControlPanel > QFrame QLabel {
   background-color: #a4c3f5;
   color: #020612;
-  font-size: 16px;
+  font-size: 14px;
   text-align: center;
   font-weight: bold;
 }
@@ -46,31 +46,48 @@ ControlPanel > QFrame QLabel {
 ControlPanel > QFrame QPushButton {
   background-color: #003d7c;
   color: #fefefe;
-  font-size: 14px;
+  font-size: 12px;
   text-align: center;
   border: 2px solid #020612;
-  padding: 10px;
+  /* padding: 10px 5px; */
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
   border-radius: 5px;
+  font-weight: bold;
 }
 
 ControlPanel > QFrame QPushButton:checked {
   background-color: #ef7c00;
   color: #020612;
-  font-size: 14px;
+  font-size: 12px;
   text-align: center;
   border: 2px solid #020612;
-  padding: 10px;
+  /* padding: 10px; */
   border-radius: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 5px;
+  font-weight: bold;
 }
 
 .flash-button {
   background-color: #ef7c00;
   color: #020612;
-  font-size: 14px;
+  font-size: 12px;
   text-align: center;
   border: 2px solid #020612;
-  padding: 10px;
+  /* padding: 10px; */
   border-radius: 5px;
+  padding-left: 10px;
+  padding-right: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
+  border-radius: 5px;
+  font-weight: bold;
 }
 
 QLineEdit {
@@ -98,7 +115,7 @@ Log > QFrame {
 Log > QFrame QLabel {
   background-color: #a4c3f5;
   color: #020612;
-  font-size: 16px;
+  font-size: 14px;
   text-align: center;
   font-weight: bold;
   padding: 2;
@@ -107,7 +124,7 @@ Log > QFrame QLabel {
 Log > QFrame > TelemetryDisplay > QLabel {
   background-color: #a4c3f5;
   color: #020612;
-  font-size: 14px;
+  font-size: 12px;
   text-align: center;
   font-weight: normal;
 }

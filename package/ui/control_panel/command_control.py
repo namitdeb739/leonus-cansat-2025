@@ -1,24 +1,31 @@
 import time
+from xmlrpc.client import boolean
 from PyQt6.QtWidgets import (
     QLabel,
     QPushButton,
     QSizePolicy,
     QGridLayout,
     QLineEdit,
+    QWidget,
+    QVBoxLayout,
+    QFileDialog,
 )
 from PyQt6.QtCore import Qt, QTimer
-from PyQt6.QtGui import QIntValidator
+from PyQt6.QtGui import QDoubleValidator
 from package.communication import Communication
 from package.models.telemetry import OnOff
 from package.ui.control_panel.control_section import ControlSection
 
 
 class CommandControl(ControlSection):
+    SELECT_FILE_STYLESHEET = "background-color: #f0f0f0; color: #000000"
+
     def __init__(self, communication: Communication):
         super().__init__()
         self.setObjectName("CommandControl")
 
         self.communication = communication
+        self.file_contents = None
 
         self.enable_store = QPushButton("Enable Store")
         ControlSection.build_button(self.enable_store, self.press_enable_store)
@@ -55,11 +62,26 @@ class CommandControl(ControlSection):
             set_checkable=False,
         )
 
+        self.select_simulated_pressure_file = QPushButton("Select File")
+        ControlSection.build_button(
+            self.select_simulated_pressure_file,
+            self.press_select_simulated_pressure_file,
+            set_checkable=False,
+        )
+        self.select_simulated_pressure_file.setStyleSheet(
+            CommandControl.SELECT_FILE_STYLESHEET
+        )
+
         self.simulated_pressure_input = QLineEdit()
         self.simulated_pressure_input.setPlaceholderText("Pressure")
         self.simulated_pressure_input.setValidator(
-            QIntValidator(0, 100000, self.simulated_pressure_input)
+            QDoubleValidator(0.0, 100000.0, 1, self.simulated_pressure_input)
         )
+
+        self.pressure_inputs = QWidget()
+        self.pressure_inputs.setLayout(pressure_input_layout := QVBoxLayout())
+        pressure_input_layout.addWidget(self.simulated_pressure_input)
+        pressure_input_layout.addWidget(self.select_simulated_pressure_file)
 
         self.calibrate_altitude = QPushButton("Set To Zero")
         self.calibrate_altitude.setObjectName("CalibrateAltitude")
@@ -90,7 +112,7 @@ class CommandControl(ControlSection):
                 self.payload_telemetry_off,
             ],
             "Simulated Pressure": [
-                self.simulated_pressure_input,
+                self.pressure_inputs,
                 self.send_simulated_pressure,
             ],
             "Calibrate Altitude": [self.calibrate_altitude],
@@ -132,6 +154,9 @@ class CommandControl(ControlSection):
                 layout.addWidget(
                     button, row, column + 1, Qt.AlignmentFlag.AlignCenter
                 )
+                # button.setSizePolicy(
+                #     QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Minimum
+                # )
 
         layout.setColumnStretch(0, 0)
         for col in range(1, layout.columnCount()):
@@ -140,17 +165,26 @@ class CommandControl(ControlSection):
         self.setLayout(layout)
 
     @staticmethod
-    def flash_button(button: QPushButton) -> None:
+    def flash_button(
+        button: QPushButton, selecting_file: boolean = False
+    ) -> None:
+        if selecting_file:
+            button.setStyleSheet("")
         button.setProperty("class", "flash-button")
         button.style().unpolish(button)
         button.style().polish(button)
 
         QTimer.singleShot(
-            500, lambda: CommandControl.remove_flash_class(button)
+            500,
+            lambda: CommandControl.remove_flash_class(button, selecting_file),
         )
 
     @staticmethod
-    def remove_flash_class(button: QPushButton) -> None:
+    def remove_flash_class(
+        button: QPushButton, selecting_file: boolean = False
+    ) -> None:
+        if selecting_file:
+            button.setStyleSheet(CommandControl.SELECT_FILE_STYLESHEET)
         button.setProperty("class", "")
         button.style().unpolish(button)
         button.style().polish(button)
@@ -176,26 +210,30 @@ class CommandControl(ControlSection):
         self.communication.payload_telemetry(OnOff.OFF)
 
     def press_set_gcs_time(self) -> None:
-        print("Set GCS Time")
         CommandControl.flash_button(self.set_gcs_time)
         self.communication.set_time(
             time.strftime("%H:%M:%S", time.localtime())
         )
 
     def press_set_gps_time(self) -> None:
-        print("Set GPS Time")
         CommandControl.flash_button(self.set_gps_time)
         self.communication.set_time("GPS")
 
     def press_send_smulated_pressure(self) -> None:
-        pressure = self.simulated_pressure_input.text()
-        print(f"Simulated Pressure: {pressure}")
-        CommandControl.flash_button(self.send_simulated_pressure)
-        self.communication.simulate_pressure(pressure)
-        self.simulated_pressure_input.clear()
+        if self.file_contents:
+            # print(f"Simulated Pressure File: {self.file_contents}")
+            CommandControl.flash_button(self.send_simulated_pressure)
+            self.communication.simulate_pressure_file(self.file_contents)
+            self.select_simulated_pressure_file.setText("Select File")
+        else:
+            pressure = self.simulated_pressure_input.text()
+            # print(f"Simulated Pressure: {pressure}")
+            CommandControl.flash_button(self.send_simulated_pressure)
+            self.communication.simulate_pressure(pressure)
+            self.simulated_pressure_input.clear()
 
     def press_calibrate_altitude(self) -> None:
-        print("Calibrate Altitude")
+        # print("Calibrate Altitude")
         CommandControl.flash_button(self.calibrate_altitude)
         self.communication.calibrate_altitude()
 
@@ -208,3 +246,22 @@ class CommandControl(ControlSection):
         self.mechanism_actuation_on.setChecked(False)
         self.mechanism_actuation_off.setChecked(True)
         self.communication.mechanism_actuation(OnOff.OFF)
+
+    def press_select_simulated_pressure_file(self) -> None:
+        CommandControl.flash_button(self.select_simulated_pressure_file, True)
+
+        options = QFileDialog.Option.ReadOnly
+        file_name, _ = QFileDialog.getOpenFileName(
+            self,
+            "Select Simulated Pressure File",
+            "",
+            "Text Files (*.txt);;All Files (*)",
+            options=options,
+        )
+        if file_name:
+            try:
+                with open(file_name, "r") as file:
+                    self.file_contents = file.read()
+                    self.select_simulated_pressure_file.setText(file_name)
+            except Exception as e:
+                print(f"Failed to read file {file_name}: {e}")

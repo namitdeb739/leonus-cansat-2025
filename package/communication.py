@@ -1,6 +1,12 @@
+import sys
+from digi.xbee.devices import XBeeDevice
 import csv
 import os
 import time
+
+import serial
+import serial.tools
+import serial.tools.list_ports
 from package.models.telemetry import (
     GPS,
     OnOff,
@@ -8,19 +14,45 @@ from package.models.telemetry import (
     SimulationMode,
     Telemetry,
 )
-import random
+
+# import random
 
 
 class Communication:
+    PORT = ""
+    BAUD_RATE = 9600
+    REMOTE_NODE_ID = "PAYLOAD"
+
     def __init__(self, team_id: int) -> None:
+        Communication.PORT = Communication.find_port()
+
+        self.telemetry_data_string = None
+
         self.packet_count = 0
         self.team_id = team_id
         self.start_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         self.csv_file = f"logs/{self.start_time}/Flight_{self.team_id}.csv"
         self.store_enabled = False
+
+        self.simulated_pressure_file_data = []
+
+        print("Setting up device")
+        self.device = XBeeDevice(Communication.PORT, Communication.BAUD_RATE)
+
+        self.device.open()
+        xbee_network = self.device.get_network()
+        self.remote_device = xbee_network.discover_device(
+            Communication.REMOTE_NODE_ID
+        )
+        self.device.add_data_received_callback(
+            lambda xbee_message: self.set_telemetry_data_string(
+                xbee_message.data.decode()
+            )
+        )
+        print(f"Device initialised: {self.remote_device}")
+
         self.initialise_csv()
 
-    # TODO: Implement connection to cansat for recieving data
     def recieve(self) -> str:
         """
         Data formatted as:
@@ -30,41 +62,49 @@ class Communication:
         GPS_TIME, GPS_ALTITUDE, GPS_LATITUDE, GPS_LONGITUDE, GPS_SATS,
         CMD_ECHO [,,OPTIONAL_DATA]
         """
-        mission_time = time.strftime("%H:%M:%S", time.localtime())
-        self.packet_count += 1
-        mode = random.choice(["F", "S"])
-        state = random.choice(
-            [
-                "LAUNCH_PAD",
-                "ASCENT",
-                "APOGEE",
-                "DESCENT",
-                "PROBE_RELEASE",
-                "LANDED",
-            ]
-        )
-        altitude = round(random.uniform(0, 1000), 1)
-        temperature = round(random.uniform(0, 100), 1)
-        pressure = round(random.uniform(0, 1000), 1)
-        voltage = round(random.uniform(0, 100), 1)
-        gyro_r = round(random.uniform(0, 360), 1)
-        gyro_p = round(random.uniform(0, 360), 1)
-        gyro_y = round(random.uniform(0, 360), 1)
-        accel_r = round(random.uniform(0, 360), 1)
-        accel_p = round(random.uniform(0, 360), 1)
-        accel_y = round(random.uniform(0, 360), 1)
-        mag_r = round(random.uniform(0, 360), 1)
-        mag_p = round(random.uniform(0, 360), 1)
-        mag_y = round(random.uniform(0, 360), 1)
-        auto_gyro_rotation_rate = round(random.uniform(0, 100), 1)
-        gps_time = mission_time
-        gps_altitude = altitude
-        gps_latitude = round(random.uniform(0, 360), 1)
-        gps_longitude = round(random.uniform(0, 360), 1)
-        gps_sats = random.randint(0, 100)
-        cmd_echo = ""
 
-        return f"{self.team_id},\
+        try:
+            """mission_time = time.strftime("%H:%M:%S", time.localtime())
+            self.packet_count += 1
+            mode = random.choice(["F", "S"])
+            state = random.choice(
+                [
+                    "LAUNCH_PAD",
+                    "ASCENT",
+                    "APOGEE",
+                    "DESCENT",
+                    "PROBE_RELEASE",
+                    "LANDED",
+                ]
+            )
+            altitude = round(random.uniform(0, 1000), 1)
+            temperature = round(random.uniform(0, 100), 1)
+            pressure = round(random.uniform(0, 1000), 1)
+            voltage = round(random.uniform(0, 100), 1)
+            gyro_r = round(random.uniform(0, 360), 1)
+            gyro_p = round(random.uniform(0, 360), 1)
+            gyro_y = round(random.uniform(0, 360), 1)
+            accel_r = round(random.uniform(0, 360), 1)
+            accel_p = round(random.uniform(0, 360), 1)
+            accel_y = round(random.uniform(0, 360), 1)
+            mag_r = round(random.uniform(0, 360), 1)
+            mag_p = round(random.uniform(0, 360), 1)
+            mag_y = round(random.uniform(0, 360), 1)
+            auto_gyro_rotation_rate = round(random.uniform(0, 100), 1)
+            gps_time = mission_time
+            gps_altitude = altitude
+            gps_latitude = round(random.uniform(0, 360), 1)
+            gps_longitude = round(random.uniform(0, 360), 1)
+            gps_sats = random.randint(0, 100)
+            cmd_echo = "" """
+
+            return (
+                self.telemetry_data_string
+                if self.telemetry_data_string
+                else None
+            )
+
+            """ return f"{self.team_id},\
             {mission_time},\
             {self.packet_count},\
             {mode},\
@@ -88,9 +128,15 @@ class Communication:
             {gps_latitude},\
             {gps_longitude},\
             {gps_sats},\
-            {cmd_echo}"
+            {cmd_echo}" """
+        except Exception as e:
+            print(e)
 
     def parse_data(self, data: str) -> Telemetry:
+        if data is None:
+            print("Passing")
+            return None
+
         fields = data.split(",")
         (
             team_id,
@@ -120,6 +166,12 @@ class Communication:
             cmd_echo,
         ) = [field.strip() for field in fields]
 
+        if self.telemetry_time and time.strptime(
+            self.telemetry_time, "%H:%M:%S"
+        ) >= time.strptime(mission_time, "%H:%M:%S"):
+            print("Passing")
+            return None
+
         telemetry = Telemetry(
             team_id=int(team_id),
             mission_time=mission_time,
@@ -148,13 +200,15 @@ class Communication:
             auto_gyro_rotation_rate=float(auto_gyro_rotation_rate),
             gps=GPS(
                 time=gps_time,
-                altitude=float(gps_altitude),
-                latitude=float(gps_latitude),
-                longitude=float(gps_longitude),
+                altitude=float(gps_altitude) if gps_altitude else 0,
+                latitude=float(gps_latitude) if gps_latitude else 0,
+                longitude=float(gps_longitude) if gps_longitude else 0,
                 sats=int(gps_sats),
             ),
             cmd_echo=cmd_echo,
         )
+
+        self.telemetry_time = mission_time
 
         if self.store_enabled:
             self.log_data(telemetry)
@@ -228,7 +282,14 @@ class Communication:
             writer.writerow(row)
 
     def send(self, data: str) -> None:
-        print(data)
+        if self.remote_device is None:
+            print("Could not find the other device")
+            exit(1)
+
+        print(f"SENDING: {data}")
+
+        # for char in f"<{data}>":
+        self.device.send_data(self.remote_device, f"<{data}>")
 
     def payload_telemetry(self, on_off: OnOff) -> None:
         send_string = f"CMD, {self.team_id}, CX, {on_off}"
@@ -246,10 +307,34 @@ class Communication:
         send_string = f"CMD, {self.team_id}, SIMP, {pressure}"
         self.send(send_string)
 
+    def simulate_pressure_file(self, file_contents: str) -> None:
+        self.simulated_pressure_file_data = [
+            f"CMD, {self.team_id}, SIMP, {pressure}"
+            for pressure in file_contents.splitlines()
+        ]
+
+    def send_simulated_pressure(self) -> None:
+        if self.simulated_pressure_file_data:
+            send_string = self.simulated_pressure_file_data.pop(0)
+            self.send(send_string)
+
     def calibrate_altitude(self) -> None:
         send_string = f"CMD, {self.team_id}, CAL"
         self.send(send_string)
 
     def mechanism_actuation(self, on_off: OnOff) -> None:
-        send_string = f"CMD, {self.team_id}, MA, {on_off}"
+        send_string = f"CMD, {self.team_id}, MEC, {on_off}"
         self.send(send_string)
+
+    @staticmethod
+    def find_port() -> str:
+        return "/dev/tty.usbserial-D30DP553"
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+            if "USB" in port.device:
+                return port.device
+        sys.exit("No USB port found")
+
+    def set_telemetry_data_string(self, data: str) -> None:
+        print(data)
+        self.telemetry_data_string = data[1:-2] if data else None
