@@ -41,11 +41,21 @@ class App(QApplication):
         pg.setConfigOption("foreground", Colours.RICH_BLACK.value)
 
     def update(self) -> None:
+        if not self.communication.is_connected():
+            print(f"{time.strftime('%H:%M:%S')} No connection")
+            self.connection.connect()
+            # self.main_window.update_connection_status(False)
+            return
+
         data = self.communication.recieve()
         if data is None:
             print(f"{time.strftime('%H:%M:%S')} No data received")
             return
         telemetry = self.communication.parse_data(data)
+
+        if telemetry is None:
+            return
+
         self.main_window.update(telemetry)
 
         if (

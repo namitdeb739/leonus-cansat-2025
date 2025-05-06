@@ -43,5 +43,6 @@ class MainWindow(QMainWindow):
         self.setGeometry(geometry)
 
     def update(self, telemetry: Telemetry) -> None:
+        print()
         self.body.update(telemetry)
         self.header.update(telemetry.header())

@@ -1,12 +1,17 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
+import shutil
+import os
 
 
 def generate_plots(date_time: str, csv_file: str) -> None:
     data = pd.read_csv(csv_file)
     if data.empty:
         print("No data to plot")
+        log_dir = f"logs/{date_time}/"
+        if os.path.exists(log_dir):
+            shutil.rmtree(log_dir)
         return
 
     start_time = pd.to_datetime(

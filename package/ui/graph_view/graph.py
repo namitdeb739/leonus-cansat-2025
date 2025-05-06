@@ -66,9 +66,16 @@ class Graph(pg.PlotItem):
             self.pointer, self.pointer + Graph.TIME_VIEW
         )
         self.getViewBox().setYRange(
-            0,
+            min(
+                0,
+                min(
+                    (data[-Graph.TIME_VIEW :].min() if len(data) > 0 else 0)
+                    for data in self.graph_data
+                ),
+            )
+            * 1.25,
             max(
-                (data[-Graph.TIME_VIEW:].max() if len(data) > 0 else 100)
+                (data[-Graph.TIME_VIEW :].max() if len(data) > 0 else 100)
                 for data in self.graph_data
             )
             * 1.25,

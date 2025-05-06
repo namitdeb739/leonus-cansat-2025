@@ -33,23 +33,41 @@ class Communication:
         self.start_time = time.strftime("%Y%m%d_%H%M%S", time.localtime())
         self.csv_file = f"logs/{self.start_time}/Flight_{self.team_id}.csv"
         self.store_enabled = False
+        self.first_read = True
+        self.telemetry_time = (
+            (t := self.start_time.split("_")[1])[0:2]
+            + ":"
+            + t[2:4]
+            + ":"
+            + t[4:6]
+        )
 
         self.simulated_pressure_file_data = []
 
-        print("Setting up device")
+        print("Setting up device...")
         self.device = XBeeDevice(Communication.PORT, Communication.BAUD_RATE)
+        print("Device set up")
 
         self.device.open()
-        xbee_network = self.device.get_network()
-        self.remote_device = xbee_network.discover_device(
+        print(f"Device opened {self.device}")
+
+        print("Connecting to remote device...")
+        self.remote_device = self.device.get_network().discover_device(
             Communication.REMOTE_NODE_ID
         )
+
+        print(
+            f"Remote connection set up: {self.remote_device}"
+            if self.remote_device
+            else "Remote connection setup failed"
+        )
+
         self.device.add_data_received_callback(
             lambda xbee_message: self.set_telemetry_data_string(
                 xbee_message.data.decode()
             )
         )
-        print(f"Device initialised: {self.remote_device}")
+        print("Device fully initialised" if self.remote_device else "Device setup failed")
 
         self.initialise_csv()
 
@@ -166,12 +184,18 @@ class Communication:
             cmd_echo,
         ) = [field.strip() for field in fields]
 
-        if self.telemetry_time and time.strptime(
-            self.telemetry_time, "%H:%M:%S"
-        ) >= time.strptime(mission_time, "%H:%M:%S"):
-            print("Passing")
+        if not self.first_read and (
+            self.telemetry_time
+            and time.strptime(self.telemetry_time, "%H:%M:%S")
+            >= time.strptime(mission_time, "%H:%M:%S")
+        ):
+            print("PASS")
+            # print("Mission time", mission_time)
+            # print("Telemetry time", self.telemetry_time)
+            # print("First read", self.first_read)
             return None
 
+        self.first_read = False
         telemetry = Telemetry(
             team_id=int(team_id),
             mission_time=mission_time,
@@ -283,8 +307,10 @@ class Communication:
 
     def send(self, data: str) -> None:
         if self.remote_device is None:
-            print("Could not find the other device")
-            exit(1)
+            self.connect()
+            return
+            # self.device.close()
+            # exit(1)
 
         print(f"SENDING: {data}")
 
@@ -309,8 +335,15 @@ class Communication:
 
     def simulate_pressure_file(self, file_contents: str) -> None:
         self.simulated_pressure_file_data = [
-            f"CMD, {self.team_id}, SIMP, {pressure}"
-            for pressure in file_contents.splitlines()
+            pressure_command.split(",")[0]
+            + ", "
+            + str(self.team_id)
+            + ", "
+            + pressure_command.split(",")[2]
+            + ", "
+            + pressure_command.split(",")[3]
+            for pressure_command in file_contents.splitlines()
+            if pressure_command.strip() != "" and pressure_command[0] != "#"
         ]
 
     def send_simulated_pressure(self) -> None:
@@ -338,3 +371,21 @@ class Communication:
     def set_telemetry_data_string(self, data: str) -> None:
         print(data)
         self.telemetry_data_string = data[1:-2] if data else None
+
+    def is_connected(self) -> bool:
+        return self.device.is_open() and self.remote_device is not None
+
+    def connect(self) -> None:
+        if not self.device.is_open():
+            self.device.open()
+            print("Device opened")
+
+        if self.remote_device is None:
+            self.remote_device = self.device.get_network().discover_device(
+                Communication.REMOTE_NODE_ID
+            )
+            print(
+                f"Remote connection set up: {self.remote_device}"
+                if self.remote_device
+                else "Remote connection setup failed"
+            )
