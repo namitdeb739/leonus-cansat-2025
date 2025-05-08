@@ -4,64 +4,54 @@ from PyQt6.QtWidgets import (
     QVBoxLayout,
     QLabel,
     QSizePolicy,
-    QHBoxLayout,
     QSpacerItem,
+    QHBoxLayout,
 )
 from PyQt6.QtCore import Qt
-from package.communication import Communication
-from package.models.telemetry import (
-    SimulationMode,
-)
+from package.communications.communication import Communication
+from package.models.telemetry import SimulationMode
 from package.ui.control_panel.control_section import ControlSection
 
 
 class ModeControl(ControlSection):
     def __init__(self, communication: Communication) -> None:
         super().__init__()
-        self.setObjectName("ModeControl")
-
         self.communication = communication
 
-        self.activate_flight_mode = QPushButton("Activate Flight Mode")
-        ControlSection.build_button(
-            self.activate_flight_mode,
-            self.press_activate_flight_mode,
+        self.activate_flight_mode = self.__create_button(
+            "Activate Flight Mode",
+            self.__press_activate_flight_mode,
             set_checked=True,
         )
-        self.activate_flight_mode.setSizePolicy(
-            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding
+        self.enable_simulation_mode = self.__create_button(
+            "Enable Simulation Mode", self.__press_enable_simulation_mode
         )
-
-        self.enable_simulation_mode = QPushButton("Enable Simulation Mode")
-        ControlSection.build_button(
-            self.enable_simulation_mode,
-            self.press_enable_simulation_mode,
-        )
-
-        self.activate_simulation_mode = QPushButton("Activate Simulation Mode")
-        ControlSection.build_button(
-            self.activate_simulation_mode,
-            self.press_activate_simulation_mode,
+        self.activate_simulation_mode = self.__create_button(
+            "Activate Simulation Mode",
+            self.__press_activate_simulation_mode,
             lock=True,
         )
 
+        self.__setup_layout()
+
+    def __setup_layout(self) -> None:
         simulation = QWidget()
         simulation.setLayout(simulation_layout := QVBoxLayout())
         simulation_layout.setContentsMargins(0, 0, 0, 0)
         simulation_layout.addWidget(
-            self.enable_simulation_mode, alignment=Qt.AlignmentFlag.AlignTop
+            self.enable_simulation_mode,
+            alignment=Qt.AlignmentFlag.AlignVCenter,
         )
         simulation_layout.addSpacerItem(QSpacerItem(0, 10))
         simulation_layout.addWidget(
             self.activate_simulation_mode,
-            alignment=Qt.AlignmentFlag.AlignBottom,
+            alignment=Qt.AlignmentFlag.AlignVCenter,
         )
 
         widgets = [self.activate_flight_mode, simulation]
+        self.__build_layout("Mode", widgets)
 
-        self.build_layout("Mode", widgets)
-
-    def build_layout(self, title: str, widgets: list[QWidget]) -> None:
+    def __build_layout(self, title: str, widgets: list[QWidget]) -> None:
         layout = QVBoxLayout()
         layout.addWidget(title_label := QLabel(title))
 
@@ -73,7 +63,7 @@ class ModeControl(ControlSection):
         layout.addWidget(buttons := QWidget())
         buttons.setLayout(buttons_layout := QHBoxLayout())
         buttons.setSizePolicy(
-            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Maximum
         )
         buttons_layout.setContentsMargins(0, 0, 0, 0)
 
@@ -82,32 +72,42 @@ class ModeControl(ControlSection):
 
         self.setLayout(layout)
 
-    def press_activate_flight_mode(self) -> None:
+    def __create_button(
+        self,
+        text: str,
+        callback: callable,
+        set_checked: bool = False,
+        lock: bool = False,
+    ) -> QPushButton:
+        button = QPushButton(text)
+        ControlSection.build_button(
+            button, callback, set_checked=set_checked, lock=lock
+        )
+        button.setSizePolicy(
+            QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding
+        )
+        return button
+
+    def __press_activate_flight_mode(self) -> None:
         self.activate_flight_mode.setChecked(True)
         self.enable_simulation_mode.setChecked(False)
         self.activate_simulation_mode.setChecked(False)
         self.activate_simulation_mode.setEnabled(False)
         self.communication.simulation_mode_control(SimulationMode.DISABLE)
 
-    def press_enable_simulation_mode(self) -> None:
-        if self.enable_simulation_mode.isChecked():
-            self.enable_simulation_mode.setChecked(True)
-            self.activate_simulation_mode.setEnabled(True)
-            self.communication.simulation_mode_control(SimulationMode.ENABLE)
-        else:
-            self.enable_simulation_mode.setChecked(False)
-            self.activate_simulation_mode.setEnabled(False)
-            self.activate_simulation_mode.setChecked(False)
-            self.activate_flight_mode.setChecked(True)
-            self.communication.simulation_mode_control(SimulationMode.DISABLE)
+    def __press_enable_simulation_mode(self) -> None:
+        self.enable_simulation_mode.setChecked(True)
+        self.activate_simulation_mode.setEnabled(True)
+        self.communication.simulation_mode_control(SimulationMode.ENABLE)
 
-    def press_activate_simulation_mode(self) -> None:
-        if self.activate_simulation_mode.isChecked():
-            self.activate_simulation_mode.setChecked(True)
-            self.activate_flight_mode.setChecked(False)
-            self.communication.simulation_mode_control(SimulationMode.ACTIVATE)
+    def __press_activate_simulation_mode(self) -> None:
+        self.activate_simulation_mode.setChecked(True)
+        self.activate_flight_mode.setChecked(False)
+        self.communication.simulation_mode_control(SimulationMode.ACTIVATE)
 
-        else:
-            self.activate_simulation_mode.setChecked(False)
-            self.activate_flight_mode.setChecked(True)
-            self.communication.simulation_mode_control(SimulationMode.DISABLE)
+    def is_simulation_mode(self) -> bool:
+        return (
+            self.enable_simulation_mode.isChecked()
+            and self.activate_simulation_mode.isChecked()
+            and not self.activate_flight_mode.isChecked()
+        )

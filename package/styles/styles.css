@@ -12,7 +12,6 @@ MainWindow {
 
 QWidget {
   color: #020612;
-  /* border: 1px solid #020612; */
 }
 
 Header > QWidget {
@@ -22,6 +21,70 @@ Header > QWidget {
   font-weight: bold;
   padding: 10px;
   border-radius: 15px;
+}
+
+Header > QPushButton {
+  background-color: #d32f2f;
+  color: #fefefe;
+  font-size: 14px;
+  font-weight: bold;
+  border: 2px solid #020612;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+Header > QPushButton:checked {
+  background-color: #388e3c;
+  color: #fefefe;
+  border: 2px solid #020612;
+  font-size: 14px;
+  font-weight: bold;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+Header > QDialog {
+  background-color: #fefefe;
+  color: #020612;
+  border: 2px solid #020612;
+  border-radius: 10px;
+  padding: 15px;
+}
+
+Header > QDialog QLabel {
+  font-size: 14px;
+  font-weight: bold;
+  color: #020612;
+}
+
+Header > QDialog QListWidget {
+  background-color: #ffffff;
+  color: #020612;
+  border: 1px solid #020612;
+  border-radius: 5px;
+  padding: 5px;
+  font-weight: bold;
+}
+
+Header > QDialog QDialogButtonBox {
+  background-color: #fefefe;
+  color: #020612;
+  border-top: 1px solid #020612;
+  padding-top: 10px;
+}
+
+Header > QDialog QDialogButtonBox QPushButton {
+  background-color: #003d7c;
+  color: #fefefe;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid #020612;
+  border-radius: 5px;
+  padding: 5px 10px;
+}
+
+Header > QDialog QDialogButtonBox QPushButton:pressed {
+  background-color: #ef7c00;
 }
 
 ControlPanel > QFrame {
@@ -64,7 +127,6 @@ ControlPanel > QFrame QPushButton:checked {
   font-size: 12px;
   text-align: center;
   border: 2px solid #020612;
-  /* padding: 10px; */
   border-radius: 5px;
   padding-left: 10px;
   padding-right: 10px;
@@ -80,7 +142,6 @@ ControlPanel > QFrame QPushButton:checked {
   font-size: 12px;
   text-align: center;
   border: 2px solid #020612;
-  /* padding: 10px; */
   border-radius: 5px;
   padding-left: 10px;
   padding-right: 10px;
@@ -100,10 +161,10 @@ QLineEdit {
 }
 
 ControlPanel > QFrame > QWidget > #CalibrateAltitude {
-  width: 240%;
+  width: 200%;
 }
 
-Log > QFrame {
+LogDisplay > QFrame {
   background-color: #a4c3f5;
   color: #020612;
   border-radius: 15px;
@@ -112,7 +173,7 @@ Log > QFrame {
   height: 100%;
 }
 
-Log > QFrame QLabel {
+LogDisplay > QFrame QLabel {
   background-color: #a4c3f5;
   color: #020612;
   font-size: 14px;
@@ -121,10 +182,50 @@ Log > QFrame QLabel {
   padding: 2;
 }
 
-Log > QFrame > TelemetryDisplay > QLabel {
-  background-color: #a4c3f5;
+LogDisplay > QFrame > Log > QScrollArea {
+  background-color: #fefefe;
+  border: 1px solid #020612;
+  border-radius: 10px;
+  padding: 5px;
+  max-height: 400px;
+}
+
+LogDisplay > QFrame > Log > QScrollArea QWidget {
+  background-color: #fefefe;
   color: #020612;
   font-size: 12px;
   text-align: center;
   font-weight: normal;
+}
+
+GraphView > QFrame {
+  background-color: #a4c3f5;
+  color: #020612;
+  border-radius: 15px;
+  border: 1px solid #020612;
+  width: 100%;
+  height: 100%;
+}
+
+GraphView > QFrame QLabel {
+  background-color: #a4c3f5;
+  color: #020612;
+  font-size: 12px;
+  text-align: center;
+  padding-left: 2px;
+  padding-right: 2px;
+  padding-top: 2px;
+  padding-bottom: 2px;
+  /* border-radius: 5px;
+  border: 0.5px solid #020612; */
+}
+
+GraphView > QFrame > TelemetryDisplay > QLabel {
+  background-color: #a4c3f5;
+  color: #020612;
+  font-size: 14px;
+  text-align: center;
+  font-weight: bold;
+  padding: 2;
+  border: 0px;
 }

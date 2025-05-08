@@ -1,48 +1,89 @@
-from PyQt6.QtWidgets import QMainWindow, QWidget, QVBoxLayout
-from PyQt6.QtCore import Qt
-from PyQt6.QtCore import QRect
-from package.communication import Communication
+import logging
+from PyQt6.QtWidgets import (
+    QMainWindow,
+    QWidget,
+    QVBoxLayout,
+    QSpacerItem,
+    QSizePolicy,
+)
+from PyQt6.QtCore import Qt, QRect
+from package.communications.communication import Communication
+from package.config import DevMode
+from package.constants import GEOMETRY
 from package.models.app_info import AppInfo
 from package.models.telemetry import Telemetry
 from package.ui.header import Header
-from enum import Enum
 from package.ui.body import Body
+from package.ui.log.log import Log
 
 
 class MainWindow(QMainWindow):
-    class DevType(Enum):
-        MONITOR = "monitor"
-        LAPTOP = "laptop"
 
     def __init__(
-        self, app_info: AppInfo, communication: Communication
+        self,
+        app_info: AppInfo,
+        communication: Communication,
+        geometry: tuple[int, int, int, int],
     ) -> None:
         super().__init__()
-        self.setObjectName("MainWindow")
+        self.app_info = app_info
+        self.communication = communication
 
-        self.setWindowTitle(f"{app_info.team_info.team_name} {app_info.title}")
+        self.__setup_window(geometry)
+        self.__setup_layout()
 
-        central_widget, layout = QWidget(), QVBoxLayout()
-        central_widget.setLayout(layout)
-        self.header = Header(app_info)
-        self.body = Body(communication)
-        layout.addWidget(self.header, alignment=Qt.AlignmentFlag.AlignHCenter)
-        layout.addWidget(self.body, alignment=Qt.AlignmentFlag.AlignHCenter)
-        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMaximumSize)
+    def update(self, telemetry: Telemetry) -> None:
+        self.header.update(telemetry.header())
+        self.body.update(telemetry)
 
+    def __setup_window(self, geometry: tuple[int, int, int, int]) -> None:
+        self.setWindowTitle(
+            f"{self.app_info.team_name()} {self.app_info.title}"
+        )
+        try:
+            self.setGeometry(QRect(*geometry))
+        except TypeError:
+            logging.error("Invalid geometry provided. Using default geometry.")
+            self.setGeometry(QRect(*GEOMETRY[DevMode.LAPTOP.value]))
+
+    def __setup_layout(self) -> None:
+        central_widget = QWidget()
+        layout = QVBoxLayout()
         layout.setSpacing(0)
+
+        central_widget.setLayout(layout)
+
+        self.header = Header(self.app_info, self.communication)
+        self.body = Body(self.communication)
+
+        layout.addWidget(self.header, alignment=Qt.AlignmentFlag.AlignVCenter)
+        # layout.addSpacerItem(
+        #     self.__create_spacer(10, QSizePolicy.Policy.Expanding)
+        # )
+        layout.addWidget(self.body, alignment=Qt.AlignmentFlag.AlignVCenter)
+        # layout.addSpacerItem(
+        #     self.__create_spacer(20, QSizePolicy.Policy.Expanding)
+        # )
+        layout.setSizeConstraint(QVBoxLayout.SizeConstraint.SetMaximumSize)
 
         self.setCentralWidget(central_widget)
 
-    def setDevTypeGeometry(self, dev_type: str) -> None:
-        dev_type = MainWindow.DevType(dev_type)
-        if dev_type == MainWindow.DevType.MONITOR:
-            geometry = QRect(1920, 0, 1440, 900)
-        elif dev_type == MainWindow.DevType.LAPTOP:
-            geometry = QRect(0, 0, 1440, 900)
-        self.setGeometry(geometry)
+    def __create_spacer(
+        self, height: int, policy: QSizePolicy.Policy
+    ) -> QSpacerItem:
+        return QSpacerItem(0, height, policy, QSizePolicy.Policy.Fixed)
 
-    def update(self, telemetry: Telemetry) -> None:
-        print()
-        self.body.update(telemetry)
-        self.header.update(telemetry.header())
+    def logger(self) -> Log:
+        return self.body.log_display()
+
+    def update_device_connection_status(self, status: bool) -> None:
+        self.header.update_device_connection_status(status)
+
+    def update_remote_device_connection_status(self, status: bool) -> None:
+        self.header.update_remote_device_connection_status(status)
+
+    def is_simulation_mode(self) -> bool:
+        return self.body.is_simulation_mode()
+
+    def update_time(self) -> None:
+        self.header.update_time()

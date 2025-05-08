@@ -1,4 +1,3 @@
-from enum import Enum
 from PyQt6.QtWidgets import (
     QWidget,
     QVBoxLayout,
@@ -7,34 +6,51 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 
-from package.communication import Communication
+from package.communications.communication import Communication
 from .mode_control import ModeControl
 from .command_control import CommandControl
 
 
 class ControlPanel(QWidget):
-    class LabelLocation(Enum):
-        TOP = "TOP"
-        LEFT = "LEFT"
-
-    def __init__(self, commuinication: Communication) -> None:
+    def __init__(self, communication: Communication) -> None:
         super().__init__()
-        self.setObjectName("ControlPanel")
+        self.mode_control = None
+        self.command_control = None
 
-        self.build_layout(commuinication)
-
-    def build_layout(self, communication: Communication) -> None:
-        self.setLayout(layout := QVBoxLayout())
-        layout.setContentsMargins(0, 0, 0, 0)
-        layout.setSpacing(0)
-
-        layout.addWidget(
-            frame := QFrame(), alignment=Qt.AlignmentFlag.AlignHCenter
+        self.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
-        frame.setLayout(frame_layout := QVBoxLayout())
+
+        self.__setup_layout(communication)
+
+    def __setup_layout(self, communication: Communication) -> None:
+        layout = QVBoxLayout()
+        layout.setContentsMargins(0, 10, 0, 10)
+        layout.setSpacing(10)
+
+        frame = self.__create_frame(communication)
+        layout.addWidget(frame, alignment=Qt.AlignmentFlag.AlignHCenter)
+
+        self.setLayout(layout)
+
+    def __create_frame(self, communication: Communication) -> QFrame:
+        frame = QFrame()
         frame.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
 
-        frame_layout.addWidget(ModeControl(communication))
-        frame_layout.addWidget(CommandControl(communication))
+        frame_layout = QVBoxLayout()
+        frame_layout.setContentsMargins(0, 10, 0, 10)
+        frame_layout.setSpacing(10)
+
+        self.mode_control = ModeControl(communication)
+        frame_layout.addWidget(self.mode_control)
+
+        self.command_control = CommandControl(communication)
+        frame_layout.addWidget(self.command_control)
+
+        frame.setLayout(frame_layout)
+        return frame
+
+    def is_simulation_mode(self) -> bool:
+        return self.mode_control.is_simulation_mode()

@@ -18,8 +18,13 @@ def install(c: Context) -> None:
 
 
 @task
-def run(c: Context) -> None:
-    c.run("python main.py", pty=True)
+def runlaptop(c: Context) -> None:
+    c.run("python main.py --dev_mode laptop", pty=True)
+
+
+@task
+def runmonitor(c: Context) -> None:
+    c.run("python main.py --dev_mode monitor", pty=True)
 
 
 @task
@@ -35,26 +40,6 @@ def freeze(c: Context) -> None:
 @task
 def watch(c: Context) -> None:
     c.run("python watch.py", pty=True)
-
-
-@task
-def runlaptop(c: Context) -> None:
-    c.run("python main.py laptop", pty=True)
-
-
-@task
-def runmonitor(c: Context) -> None:
-    c.run("python main.py monitor", pty=True)
-
-
-@task
-def watchlaptop(c: Context) -> None:
-    c.run("python watch.py laptop", pty=True)
-
-
-@task
-def watchmonitor(c: Context) -> None:
-    c.run("python watch.py monitor", pty=True)
 
 
 @task

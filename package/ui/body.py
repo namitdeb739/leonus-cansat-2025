@@ -4,78 +4,42 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
     QVBoxLayout,
 )
-from package.communication import Communication
+from package.communications.communication import Communication
 from package.models.telemetry import (
-    GPS,
-    Command,
-    PrincipalAxesCoordinate,
     Telemetry,
-    Mode,
-    State,
 )
-from .graph_view.graph_view import GraphView
+from package.ui.log.log_display import LogDisplay
+from package.ui.log.log import Log
+from package.ui.telemetry.graph_view import GraphView
 from .control_panel.control_panel import ControlPanel
-from .telemetry_display.log import Log
+from PyQt6.QtGui import QGuiApplication
 
 
 class Body(QWidget):
-
     def __init__(self, communication: Communication) -> None:
         super().__init__()
-        self.setObjectName("Body")
-
-        # TODO: Fix initialisation
-        telemetry = Telemetry(
-            1,
-            "00:00:00",
-            1,
-            Mode.FLIGHT,
-            State.LAUNCH_PAD,
-            100.4,
-            37.5,
-            1003,
-            3.7,
-            PrincipalAxesCoordinate(1.0, 2.0, 3.0),
-            PrincipalAxesCoordinate(1.0, 2.0, 3.0),
-            PrincipalAxesCoordinate(1.0, 2.0, 3.0),
-            1.0,
-            GPS("00:00:00", 750, 100, 10, 10),
-            Command.command(
-                Command.CommandType.SIMULATION_MODE_CONTROL, "ENABLE"
-            ),
-        )
-
-        self.build_layout(telemetry, communication)
-
         self.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding
         )
 
-    def build_layout(
-        self, telemetry: Telemetry, communication: Communication
-    ) -> None:
+        self.setMinimumHeight(
+            int(QGuiApplication.primaryScreen().geometry().height() * 0.7)
+        )
+
+        self.control_panel = None
+        self.log = None
+        self.graph_view = None
+
+        self.__setup_layout(communication)
+
+    def __setup_layout(self, communication: Communication) -> None:
         layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        layout.addWidget(sidebar := QWidget())
-        sidebar.setLayout(sidebar_layout := QVBoxLayout())
-        sidebar.setSizePolicy(
-            QSizePolicy.Policy.Fixed,
-            QSizePolicy.Policy.Expanding,
-        )
-
-        self.control_panel = ControlPanel(communication)
-        sidebar_layout.addWidget(self.control_panel)
-        self.control_panel.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Minimum,
-        )
-
-        self.log = Log(telemetry)
-        sidebar_layout.addWidget(self.log)
-        self.log.setSizePolicy(
-            QSizePolicy.Policy.Fixed,
-            QSizePolicy.Policy.Expanding,
+        sidebar = self.__create_sidebar(communication)
+        layout.addWidget(sidebar)
+        sidebar.setMaximumWidth(
+            int(QGuiApplication.primaryScreen().geometry().width() * 0.24)
         )
 
         self.graph_view = GraphView()
@@ -83,6 +47,33 @@ class Body(QWidget):
 
         self.setLayout(layout)
 
+    def __create_sidebar(self, communication: Communication) -> QWidget:
+        sidebar = QWidget()
+        sidebar.setLayout(sidebar_layout := QVBoxLayout())
+        sidebar.setSizePolicy(
+            QSizePolicy.Policy.Fixed, QSizePolicy.Policy.Expanding
+        )
+
+        self.control_panel = ControlPanel(communication)
+        self.control_panel.setSizePolicy(
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
+        )
+        sidebar_layout.addWidget(self.control_panel)
+
+        self.log = LogDisplay()
+        self.log.setSizePolicy(
+            QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Expanding
+        )
+        sidebar_layout.addWidget(self.log)
+
+        return sidebar
+
     def update(self, telemetry: Telemetry) -> None:
-        self.log.update(telemetry)
+        self.log.update()
         self.graph_view.update(telemetry)
+
+    def log_display(self) -> Log:
+        return self.log.log
+
+    def is_simulation_mode(self) -> bool:
+        return self.control_panel.is_simulation_mode()

@@ -97,6 +97,12 @@ class OnOff(Enum):
     def __str__(self) -> str:
         return self.value
 
+class TimeSource(Enum):
+    GPS = "GPS"
+    GCS = "GCS"
+
+    def __str__(self) -> str:
+        return self.value
 
 @dataclass
 class PayloadTelemetryCommand(Command):
@@ -108,7 +114,7 @@ class PayloadTelemetryCommand(Command):
         self.on_off = OnOff(on_off)
 
     def __str__(self) -> str:
-        return f"{self.type.value} {self.on_off}"
+        return f"{self.type.value}{self.on_off}"
 
 
 @dataclass
@@ -123,7 +129,7 @@ class SetTimeCommand(Command):
             self.time = time
 
     def __str__(self) -> str:
-        return f"{self.type.value} {self.time}"
+        return f"{self.type.value}{self.time}"
 
 
 class SimulationMode(Enum):
@@ -145,7 +151,7 @@ class SimulationModeControlCommand(Command):
         self.mode = SimulationMode(mode)
 
     def __str__(self) -> str:
-        return f"{self.type.value} {self.mode}"
+        return f"{self.type.value}{self.mode}"
 
 
 @dataclass
@@ -177,7 +183,7 @@ class MechanismActuationCommand(Command):
         self.on_off = OnOff(on_off)
 
     def __str__(self) -> str:
-        return f"{self.type.value} {self.device} {self.on_off}"
+        return f"{self.type.value}{self.device}{self.on_off}"
 
 
 @dataclass
@@ -197,6 +203,23 @@ class Telemetry:
     auto_gyro_rotation_rate: int
     gps: GPS
     cmd_echo: Command
+    descent_rate: float
+    geographic_heading: int
 
     def header(self) -> tuple[int, str, int]:
         return self.team_id, self.mission_time, self.packet_count
+
+    def gps_time(self) -> str:
+        return self.gps.time
+
+    def gps_latitude(self) -> float:
+        return self.gps.latitude
+
+    def gps_longitude(self) -> float:
+        return self.gps.longitude
+
+    def gps_altitude(self) -> float:
+        return self.gps.altitude
+
+    def gps_sats(self) -> int:
+        return self.gps.sats

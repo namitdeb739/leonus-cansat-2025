@@ -1,6 +1,6 @@
 import argparse
 import os
-import package.plotter as plotter
+import package.communications.plotter as plotter
 
 
 def main():

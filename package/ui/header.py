@@ -1,92 +1,159 @@
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QLabel, QWidget, QHBoxLayout
-from PyQt6.QtWidgets import QSpacerItem, QSizePolicy
-
+from PyQt6.QtWidgets import (
+    QLabel,
+    QWidget,
+    QHBoxLayout,
+    QSpacerItem,
+    QSizePolicy,
+    QPushButton,
+    QDialog,
+    QVBoxLayout,
+    QListWidget,
+    QDialogButtonBox,
+)
 from package.models.app_info import AppInfo
+from package.communications.communication import Communication
+from datetime import datetime
 
 
 class Header(QWidget):
-
-    def __init__(self, app_info: AppInfo) -> None:
+    def __init__(
+        self, app_info: AppInfo, communication: Communication
+    ) -> None:
         super().__init__()
-        self.setObjectName("Header")
-
-        self.team_id = app_info.team_info.team_id
-        layout = self.build_layout(app_info)
-        self.setLayout(layout)
-
         self.setSizePolicy(
-            QSizePolicy.Policy.Expanding,
-            QSizePolicy.Policy.Fixed,
+            QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Minimum
         )
+        self.setMaximumHeight(50)
 
-    def update(self, header: tuple[int, str, int]) -> None:
-        team_id, time, packet = header
-        self.team_id.setText(f"Team ID: {team_id}")
-        self.time.setText(time)
-        self.packet_label.setText(f"Packet: {packet}")
+        self.communication = communication
 
-    def build_layout(self, app_info: AppInfo) -> QHBoxLayout:
+        self.team_id_label = QLabel()
+        self.team_name_label = QLabel(
+            f"{app_info.team_name()} {app_info.title}"
+        )
+        self.packet_label = QLabel()
+        self.time_label = QLabel(datetime.now().strftime("%H:%M:%S"))
+        self.device_connection_status_button = QPushButton("GCS")
+        self.device_connection_status_button.setCheckable(True)
+        self.device_connection_status_button.setChecked(False)
+        self.device_connection_status_button.clicked.connect(
+            self.__show_usb_selector
+        )
+        self.remote_device_connection = QPushButton("OBC")
+        self.remote_device_connection.setCheckable(True)
+        self.remote_device_connection.setChecked(False)
+        self.remote_device_connection.setDisabled(True)
+
+        self.__setup_layout(app_info)
+
+    def __setup_layout(self, app_info: AppInfo) -> None:
         layout = QHBoxLayout()
+        layout.setContentsMargins(0, 0, 0, 0)
 
-        layout.setContentsMargins(0, 15, 0, 15)
-
-        self.team_id = 0
-        self.team_id = QLabel(f"Team ID: {0}")
-        layout.addWidget(self.team_id, alignment=Qt.AlignmentFlag.AlignRight)
+        layout.addWidget(
+            self.team_id_label, alignment=Qt.AlignmentFlag.AlignLeft
+        )
         layout.addSpacerItem(
-            QSpacerItem(
-                15,
-                20,
-                QSizePolicy.Policy.Minimum,
-                QSizePolicy.Policy.Minimum,
+            self.__create_spacer(10, QSizePolicy.Policy.Minimum)
+        )
+        layout.addWidget(
+            self.team_name_label, alignment=Qt.AlignmentFlag.AlignLeft
+        )
+        layout.addSpacerItem(
+            self.__create_spacer(
+                layout.maximumSize().width(), QSizePolicy.Policy.Maximum
             )
         )
-
-        Header.add_label_with_space(
-            layout,
-            f"{app_info.team_info.team_name} {app_info.title}",
-            Qt.AlignmentFlag.AlignLeft,
-            layout.maximumSize().width(),
-            QSizePolicy.Policy.Maximum,
-        )
-
-        self.packet = 0
-        self.packet_label = QLabel(f"Packet: {0}")
         layout.addWidget(
             self.packet_label, alignment=Qt.AlignmentFlag.AlignRight
         )
         layout.addSpacerItem(
-            QSpacerItem(
-                15,
-                20,
-                QSizePolicy.Policy.Minimum,
-                QSizePolicy.Policy.Minimum,
-            )
+            self.__create_spacer(10, QSizePolicy.Policy.Minimum)
         )
-
-        self.time = QLabel("00:00:00")
         layout.addWidget(
-            self.time,
-            Qt.AlignmentFlag.AlignRight,
+            self.time_label, alignment=Qt.AlignmentFlag.AlignRight
+        )
+        layout.addSpacerItem(
+            self.__create_spacer(10, QSizePolicy.Policy.Minimum)
+        )
+        layout.addWidget(
+            self.device_connection_status_button,
+            alignment=Qt.AlignmentFlag.AlignRight,
+        )
+        layout.addSpacerItem(
+            self.__create_spacer(10, QSizePolicy.Policy.Minimum)
+        )
+        layout.addWidget(
+            self.remote_device_connection,
+            alignment=Qt.AlignmentFlag.AlignRight,
         )
 
-        return layout
+        self.setLayout(layout)
+
+        self.__update_team_id(app_info.team_info.team_id)
+        self.__update_packet(0)
+        self.update_device_connection_status(False)
+
+    def update(self, header: tuple[int, str, int]) -> None:
+        team_id, _, packet = header
+        self.__update_team_id(team_id)
+        self.__update_packet(packet)
+
+    def __update_team_id(self, team_id: int) -> None:
+        self.team_id_label.setText(f"Team ID: {team_id}")
+
+    def update_time(self) -> None:
+        self.time_label.setText(datetime.now().strftime("%H:%M:%S"))
+
+    def __update_packet(self, packet: int) -> None:
+        self.packet_label.setText(f"Packets Recieved: {packet}")
+
+    def update_device_connection_status(self, status: bool) -> None:
+        self.device_connection_status_button.setChecked(status)
+
+    def update_remote_device_connection_status(self, status: bool) -> None:
+        self.remote_device_connection.setChecked(status)
+
+    def __show_usb_selector(self) -> None:
+        dialog = QDialog(self)
+        dialog.setWindowTitle("Select USB Driver")
+        dialog.setModal(True)
+
+        layout = QVBoxLayout(dialog)
+        usb_list = QListWidget()
+        usb_ports = Communication.find_ports()
+        usb_list.addItems(usb_ports)
+
+        layout.addWidget(usb_list)
+
+        buttons = QDialogButtonBox(
+            QDialogButtonBox.StandardButton.Ok
+            | QDialogButtonBox.StandardButton.Cancel
+        )
+        buttons.accepted.connect(
+            lambda: self.__select_usb_driver(dialog, usb_list)
+        )
+        buttons.rejected.connect(dialog.reject)
+        layout.addWidget(buttons)
+
+        dialog.exec()
+
+    def __select_usb_driver(
+        self, dialog: QDialog, usb_list: QListWidget
+    ) -> None:
+        selected_item = usb_list.currentItem()
+        if selected_item:
+            selected_port = selected_item.text()
+            self.communication.initialise_connection(selected_port)
+        dialog.accept()
 
     @staticmethod
-    def add_label_with_space(
-        layout: QHBoxLayout,
-        label: str,
-        alignment: Qt.AlignmentFlag,
-        space_width: int | None,
-        space_policy: QSizePolicy.Policy | None,
-    ) -> None:
-        layout.addWidget(QLabel(label), alignment=alignment)
-        layout.addSpacerItem(
-            QSpacerItem(
-                space_width,
-                20,
-                space_policy,
-                QSizePolicy.Policy.Minimum,
-            )
+    def __create_spacer(
+        width: int, horizontal_size_policy: QSizePolicy.Policy
+    ) -> QSpacerItem:
+        return QSpacerItem(
+            width, 20, horizontal_size_policy, QSizePolicy.Policy.Minimum
         )
+
+
