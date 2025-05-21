@@ -9,11 +9,16 @@ from PyQt6.QtWidgets import (
 )
 from PyQt6.QtCore import Qt
 from package.communications.communication import Communication
+from package.communications.sender import Sender
+from package.exceptions.SenderNotInitialisedException import SenderNotInitialisedException
 from package.models.telemetry import SimulationMode
 from package.ui.control_panel.control_section import ControlSection
 
 
 class ModeControl(ControlSection):
+    CLASS = "class"
+    CHECK_BUTTON = "check-button"
+
     def __init__(self, communication: Communication) -> None:
         super().__init__()
         self.communication = communication
@@ -81,29 +86,53 @@ class ModeControl(ControlSection):
     ) -> QPushButton:
         button = QPushButton(text)
         ControlSection.build_button(
-            button, callback, set_checked=set_checked, lock=lock
+            button, callback, lock=lock
         )
         button.setSizePolicy(
             QSizePolicy.Policy.Preferred, QSizePolicy.Policy.MinimumExpanding
         )
+        if set_checked:
+            self.__check_button(button)
+
         return button
 
+    @staticmethod
+    def __check_button(button: QPushButton) -> None:
+        button.setProperty(ModeControl.CLASS, ModeControl.CHECK_BUTTON)
+        button.style().unpolish(button)
+        button.style().polish(button)
+
+    @staticmethod
+    def __uncheck_button(button: QPushButton) -> None:
+        button.setProperty(ModeControl.CLASS, "")
+        button.style().unpolish(button)
+        button.style().polish(button)
+
     def __press_activate_flight_mode(self) -> None:
-        self.activate_flight_mode.setChecked(True)
-        self.enable_simulation_mode.setChecked(False)
-        self.activate_simulation_mode.setChecked(False)
-        self.activate_simulation_mode.setEnabled(False)
-        self.communication.simulation_mode_control(SimulationMode.DISABLE)
+        try:
+            self.communication.simulation_mode_control(SimulationMode.DISABLE)
+            ModeControl.__check_button(self.activate_flight_mode)
+            ModeControl.__uncheck_button(self.activate_simulation_mode)
+            ModeControl.__uncheck_button(self.enable_simulation_mode)
+            self.activate_simulation_mode.setEnabled(False)
+        except SenderNotInitialisedException:
+            return
 
     def __press_enable_simulation_mode(self) -> None:
-        self.enable_simulation_mode.setChecked(True)
-        self.activate_simulation_mode.setEnabled(True)
-        self.communication.simulation_mode_control(SimulationMode.ENABLE)
+        try:
+            self.communication.simulation_mode_control(SimulationMode.ENABLE)
+            ModeControl.__check_button(self.enable_simulation_mode)
+            self.activate_simulation_mode.setEnabled(True)
+        except SenderNotInitialisedException:
+            return
 
     def __press_activate_simulation_mode(self) -> None:
-        self.activate_simulation_mode.setChecked(True)
-        self.activate_flight_mode.setChecked(False)
-        self.communication.simulation_mode_control(SimulationMode.ACTIVATE)
+        try:
+            self.communication.simulation_mode_control(SimulationMode.ACTIVATE)
+            ModeControl.__check_button(self.activate_simulation_mode)
+            ModeControl.__uncheck_button(self.activate_flight_mode)
+        except SenderNotInitialisedException:
+            return
 
     def is_simulation_mode(self) -> bool:
         return (

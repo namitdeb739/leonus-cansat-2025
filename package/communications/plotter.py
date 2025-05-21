@@ -45,7 +45,7 @@ class Plotter:
         self.data = None
         self.log_dir = f"{Plotter.LOGS_DIR}{date_time}/"
 
-    def __load_data(self) -> bool:
+    def __load_data(self, time_recieved_first_packet: str) -> bool:
         self.data = pd.read_csv(self.csv_file)
         if self.data.empty:
             print("No data found in the CSV file.")
@@ -59,17 +59,15 @@ class Plotter:
                 format="%H:%M:%S",
             )
             - pd.to_datetime(
-                self.data[TelemetryFieldsCSVHeadings.MISSION_TIME.value].iloc[
-                    0
-                ],
+                time_recieved_first_packet,
                 format="%H:%M:%S",
             )
         ).dt.total_seconds()
 
         return True
 
-    def generate_plots(self) -> None:
-        if not self.__load_data():
+    def generate_plots(self, time_recieved_first_packet: str) -> None:
+        if not self.__load_data(time_recieved_first_packet):
             return
 
         print("Generating plots...")
@@ -88,7 +86,7 @@ class Plotter:
         plt.xlabel(f"Time Passed/s")
         plt.ylabel(f"{variable}/{self.__get_unit(plot)}")
         plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=self.NBINS))
-        plt.savefig(f"{self.log_dir}{variable.lower()}.png")
+        plt.savefig(f"{self.log_dir}{variable.replace(' ', '')}.png")
         plt.close()
 
     def _plot_three_lines(self, plot: list) -> None:
@@ -118,7 +116,7 @@ class Plotter:
         plt.ylabel(f"{variable}/{self.__get_unit(plot[0])}")
         plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=self.NBINS))
         plt.legend(legend_labels, loc="upper right")
-        plt.savefig(f"{self.log_dir}{variable.lower()}.png")
+        plt.savefig(f"{self.log_dir}{variable.replace(' ', '')}.png")
         plt.close()
 
     def __get_unit(self, field: str) -> str:

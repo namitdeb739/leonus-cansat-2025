@@ -1,6 +1,7 @@
 from enum import Enum
 from abc import ABC
 from dataclasses import dataclass
+from math import nan
 
 
 class Mode(Enum):
@@ -97,12 +98,14 @@ class OnOff(Enum):
     def __str__(self) -> str:
         return self.value
 
+
 class TimeSource(Enum):
     GPS = "GPS"
     GCS = "GCS"
 
     def __str__(self) -> str:
         return self.value
+
 
 @dataclass
 class PayloadTelemetryCommand(Command):
@@ -223,3 +226,17 @@ class Telemetry:
 
     def gps_sats(self) -> int:
         return self.gps.sats
+
+    def display_number(self, number: int | float) -> str:
+        if number is None:
+            return "NIL"
+        if number == nan or str(number) == "nan":
+            return "NaN"
+        else:
+            return str(number)
+
+    def display_mode(self) -> str:
+        return str(self.mode)
+
+    def display_state(self) -> str:
+        return str(self.state)

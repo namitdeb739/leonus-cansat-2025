@@ -1,3 +1,4 @@
+from math import nan
 from typing import Iterable
 import numpy as np
 import pyqtgraph as pg
@@ -6,7 +7,7 @@ from package.constants import Colours
 
 class Graph(pg.PlotItem):
     LINE_COLOUR_ORDER = [Colours.RED, Colours.GREEN, Colours.NUS_BLUE]
-    TIME_VIEW = 60
+    TIME_VIEW = 120
     PEN_WIDTH = 3
     LABEL_FONT_SIZE = "12pt"
     LABEL_DEFAULT_TEXT = "NIL"
@@ -20,7 +21,7 @@ class Graph(pg.PlotItem):
     def __init__(self, title: str, line_names: Iterable[str]) -> None:
         super().__init__(
             name=title,
-            title=self._format_title(title),
+            title=self.__format_title(title),
             viewBox=pg.ViewBox(border=Colours.RICH_BLACK.value),
         )
 
@@ -39,16 +40,16 @@ class Graph(pg.PlotItem):
         self.getViewBox().setXRange(
             self.pointer, self.pointer + Graph.TIME_VIEW
         )
-        self._initialize_lines()
+        self.__initialize_lines()
 
-    def _format_title(self, title: str) -> str:
+    def __format_title(self, title: str) -> str:
         return f"<h5><b>{title}</b></h5>"
 
-    def _initialize_lines(self) -> None:
+    def __initialize_lines(self) -> None:
         for i, line_name in enumerate(self.line_names):
-            self._create_line(line_name, i)
+            self.__create_line(line_name, i)
 
-    def _create_line(self, line_name: str, index: int) -> None:
+    def __create_line(self, line_name: str, index: int) -> None:
         colour = (
             Graph.LINE_COLOUR_ORDER[index]
             if self.num_lines > 1
@@ -64,10 +65,10 @@ class Graph(pg.PlotItem):
         self.graph_data.append(data)
         plot.setData(data)
 
-        label = self._create_value_label(line_name, colour, index)
+        label = self.__create_value_label(line_name, colour, index)
         self.graph_value_labels.append(label)
 
-    def _create_value_label(
+    def __create_value_label(
         self, line_name: str, colour: Colours, index: int
     ) -> pg.LabelItem:
         label = pg.LabelItem(
@@ -94,10 +95,10 @@ class Graph(pg.PlotItem):
         if any(len(data) > Graph.TIME_VIEW for data in self.graph_data):
             self.pointer += 1
 
-        self._update_view_range()
-        self._update_lines(values)
+        self.__update_view_range()
+        self.__update_lines(values)
 
-    def _update_view_range(self) -> None:
+    def __update_view_range(self) -> None:
         self.getViewBox().setXRange(
             self.pointer, self.pointer + Graph.TIME_VIEW
         )
@@ -118,10 +119,10 @@ class Graph(pg.PlotItem):
             y_min * Graph.Y_RANGE_PADDING, y_max * Graph.Y_RANGE_PADDING
         )
 
-    def _update_lines(self, values: list[float]) -> None:
+    def __update_lines(self, values: list[float]) -> None:
         for i, value in enumerate(values):
             self.graph_data[i] = np.append(self.graph_data[i], float(value))
             self.graph_plots[i].setData(self.graph_data[i])
             self.graph_value_labels[i].setText(
-                f"{self.line_names[i]}: {value}"
+                f"{self.line_names[i]}: {value if value != nan else "NaN"}"
             )

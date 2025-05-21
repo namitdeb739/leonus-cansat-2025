@@ -1,5 +1,4 @@
 import time
-
 from serial import SerialException
 from package import constants
 from package.communications.sender import Sender
@@ -9,8 +8,10 @@ from digi.xbee.exception import (
     InvalidOperatingModeException,
 )
 import serial.tools.list_ports
-
 from package.communications.store import Store
+from package.exceptions.SenderNotInitialisedException import (
+    SenderNotInitialisedException,
+)
 from package.models.telemetry import (
     OnOff,
     SimulationMode,
@@ -23,6 +24,9 @@ from package.ui.log.log import Log
 class Communication:
     BAUD_RATE = 9600
     REMOTE_NODE_ID = "PAYLOAD"
+    SENDER_NOT_INITIALISED_MESSAGE = (
+        "Sender is not initialised or not connected. Cannot %s."
+    )
 
     def __init__(self) -> None:
         self.device = None
@@ -35,6 +39,8 @@ class Communication:
 
     def initialise_connection(self, port: str) -> None:
         self.__initialise_device(port)
+        self.initialise_remote_device()
+
         if not self.device:
             self.logger.log(
                 "Device not initialised. Cannot establish connection."
@@ -69,6 +75,19 @@ class Communication:
             self.logger.log(f"Error opening device: {e}")
             return
 
+    def initialise_remote_device(self) -> None:
+        if not self.device.is_open():
+            self.logger.log(
+                "Device is not open. Cannot initialise remote device."
+            )
+            return
+
+        self.logger.log("Initialising remote device...")
+
+        # network = self.device.get_network()
+        # network.start_discovery_process()
+        # self.logger.log(f"Network devices: {network.get_devices()}")
+
         self.remote_device = self.device.get_network().discover_device(
             Communication.REMOTE_NODE_ID
         )
@@ -80,13 +99,19 @@ class Communication:
             self.logger.log("Remote device not found.")
             # self.device.close()
 
+    def connect_remote_device(self) -> None:
+        self.initialise_remote_device()
+        self.__initialise_sender()
+
     def close(self) -> None:
         self.logger.log("Closing device...")
         if self.device and self.device.is_open():
             self.device.close()
 
         self.logger.log("Closing store...")
-        self.store.close()
+        self.store.close(
+            self.receiver.time_recieved_first_packet if self.receiver else None
+        )
 
     @staticmethod
     def find_ports() -> list[str]:
@@ -130,7 +155,8 @@ class Communication:
     def has_simulated_pressure(self) -> bool:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot check simulated pressure."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "check simulated pressure"
             )
             return False
 
@@ -147,18 +173,18 @@ class Communication:
     def payload_telemetry(self, on_off: OnOff) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot send telemetry."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE % "send telemetry"
             )
-            return
+            raise SenderNotInitialisedException()
 
         self.sender.payload_telemetry(on_off)
 
     def set_time(self, time_source: TimeSource) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot set time."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE % "set time"
             )
-            return
+            raise SenderNotInitialisedException()
 
         time_str = (
             time_source.value
@@ -170,27 +196,39 @@ class Communication:
     def calibrate_altitude(self) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot calibrate altitude."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "calibrate altitude"
             )
-            return
+            raise SenderNotInitialisedException()
 
         self.sender.calibrate_altitude()
 
-    def mechanism_actuation(self, on_off: OnOff) -> None:
+    def reset_eeprom(self) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot send mechanism actuation."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE % "reset eeprom"
             )
-            return
+            raise SenderNotInitialisedException()
 
-        self.sender.mechanism_actuation(on_off)
+        self.sender.reset_eeprom()
+
+    def mechanism_actuation(self, device: str, on_off: OnOff) -> None:
+        if not self.sender:
+            self.logger.log(
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "send send mechanism actuation"
+            )
+            raise SenderNotInitialisedException()
+
+        self.sender.mechanism_actuation(device, on_off)
 
     def parse_simulate_pressure_file(self, file_contents: str) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot parse simulated pressure file."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "parse simulated pressure file"
             )
-            return
+            raise SenderNotInitialisedException()
 
         simulated_pressure_commands = [
             pressure_command.split(",")[0]
@@ -211,16 +249,18 @@ class Communication:
     def simulation_mode_control(self, mode: SimulationMode) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot control simulation mode."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "control simulation mode"
             )
-            return
+            raise SenderNotInitialisedException()
 
         self.sender.simulation_mode_control(mode)
 
     def send_next_simulated_pressure(self) -> None:
         if not self.sender:
             self.logger.log(
-                "Sender is not initialised or not connected. Cannot send next simulated pressure."
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "send next simulated pressure"
             )
             return
 

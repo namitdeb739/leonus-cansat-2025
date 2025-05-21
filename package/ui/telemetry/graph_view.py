@@ -78,11 +78,11 @@ class GraphView(QWidget):
             ["Roll", "Pitch", "Yaw"],
         )
         self.acceleration = Graph(
-            f"{TelemetryFields.ACCELERATION.value}/{TelemetryUnits.ACCELERATION.value}",
+            f"{GraphView.__full_field_name(TelemetryFields.ACCELERATION.value)}/{TelemetryUnits.ACCELERATION.value}",
             ["Roll", "Pitch", "Yaw"],
         )
         self.magnetometer = Graph(
-            f"{TelemetryFields.MAGNETOMETER.value}/{TelemetryUnits.MAGNETOMETER.value}",
+            f"{GraphView.__full_field_name(TelemetryFields.MAGNETOMETER.value)}/{TelemetryUnits.MAGNETOMETER.value}",
             ["Roll", "Pitch", "Yaw"],
         )
         self.gyro_rot_rate = Graph(
@@ -105,6 +105,14 @@ class GraphView(QWidget):
                 graph_layout.addItem(graph, row_idx, col_idx)
 
         return graph_layout
+
+    @staticmethod
+    def __full_field_name(field: str) -> str:
+        if field == TelemetryFields.ACCELERATION.value:
+            return "Acceleration"
+        elif field == TelemetryFields.MAGNETOMETER.value:
+            return "Magnetometer"
+        return field
 
     def update(self, telemetry: Telemetry) -> None:
         self.telemetry_display.update(telemetry)

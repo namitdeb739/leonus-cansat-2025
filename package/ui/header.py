@@ -40,10 +40,16 @@ class Header(QWidget):
         self.device_connection_status_button.clicked.connect(
             self.__show_usb_selector
         )
+
         self.remote_device_connection = QPushButton("OBC")
         self.remote_device_connection.setCheckable(True)
         self.remote_device_connection.setChecked(False)
         self.remote_device_connection.setDisabled(True)
+        self.remote_device_connection.clicked.connect(
+            lambda: self.communication.connect_remote_device()
+        )
+
+        self.packet_count = -1
 
         self.__setup_layout(app_info)
 
@@ -92,13 +98,13 @@ class Header(QWidget):
         self.setLayout(layout)
 
         self.__update_team_id(app_info.team_info.team_id)
-        self.__update_packet(0)
+        self.__update_packet()
         self.update_device_connection_status(False)
 
     def update(self, header: tuple[int, str, int]) -> None:
         team_id, _, packet = header
         self.__update_team_id(team_id)
-        self.__update_packet(packet)
+        self.__update_packet()
 
     def __update_team_id(self, team_id: int) -> None:
         self.team_id_label.setText(f"Team ID: {team_id}")
@@ -106,11 +112,18 @@ class Header(QWidget):
     def update_time(self) -> None:
         self.time_label.setText(datetime.now().strftime("%H:%M:%S"))
 
-    def __update_packet(self, packet: int) -> None:
-        self.packet_label.setText(f"Packets Recieved: {packet}")
+    def __update_packet(self) -> None:
+        self.packet_count = self.packet_count + 1
+        self.packet_label.setText(f"# of Packets Recieved: {self.packet_count}")
 
     def update_device_connection_status(self, status: bool) -> None:
         self.device_connection_status_button.setChecked(status)
+
+        if status:
+            self.remote_device_connection.setDisabled(False)
+        else:
+            self.remote_device_connection.setDisabled(True)
+            self.remote_device_connection.setChecked(False)
 
     def update_remote_device_connection_status(self, status: bool) -> None:
         self.remote_device_connection.setChecked(status)
@@ -155,5 +168,3 @@ class Header(QWidget):
         return QSpacerItem(
             width, 20, horizontal_size_policy, QSizePolicy.Policy.Minimum
         )
-
-

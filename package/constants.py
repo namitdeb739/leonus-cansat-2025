@@ -1,28 +1,27 @@
 from enum import Enum
 from package.models.app_info import AppInfo
 
-# Application Info
+
 APP_INFO = AppInfo(
     team_id=3171,
     team_name="LeoNUS",
     title="Cansat Telemetry & Ground Control",
 )
 
-# Geometry settings for different device types
+
 GEOMETRY = {
     "laptop": (0, 0, 1440, 900),
     "monitor": (1440, 0, 1920, 1080),
 }
 
 
-# Colours
 class Colours(Enum):
     SILVER = "#fefefe"
     NUS_BLUE = "#003d7c"
     NUS_ORANGE = "#ef7c00"
     RICH_BLACK = "#020612"
     JORDY_BLUE = "#a4c3f5"
-    RED = "#d32f2f"  # Red for Roll
+    RED = "#d32f2f"
     GREEN = "#388e3c"
     LIGHT_GREY = "#f0f0f0"
     BLACK = "#000000"
@@ -38,17 +37,17 @@ class TelemetryFields(Enum):
     PRESSURE = "Pressure"
     VOLTAGE = "Voltage"
     GYRO = "Gyro"
-    GYRO_ROTATION_RATE = "Gyro Rot. Rate"
-    ACCELERATION = "Accel."
-    MAGNETOMETER = "Magnet."
+    GYRO_ROTATION_RATE = "Gyro Rotation Rate"
+    ACCELERATION = "Acceleration"
+    MAGNETOMETER = "Magnetometer"
     GPS_TIME = "GPS Time"
     GPS_LATITUDE = "GPS Latitude"
     GPS_LONGITUDE = "GPS Longitude"
     GPS_ALTITUDE = "GPS Altitude"
-    GPS_SATELLITE_NUMBER = "GPS Satellite Number"
+    GPS_SATELLITE_NUMBER = "Satellite No."
     COMMAND_ECHO = "Command Echo"
     DESCENT_RATE = "Descent Rate"
-    GEOGRAPHIC_HEADING = "Geographic Heading"
+    GEOGRAPHIC_HEADING = "Heading"
 
 
 class TelemetryFieldsCSVHeadings(Enum):
@@ -77,24 +76,31 @@ class TelemetryFieldsCSVHeadings(Enum):
     GPS_LONGITUDE = "GPS_LONGITUDE"
     GPS_SATS = "GPS_SATS"
     CMD_ECHO = "CMD_ECHO"
+    BLANK = ""
     DESC_RATE = "DESC_RATE"
     GEOG_HEAD = "GEOG_HEAD"
 
 
 class TelemetryUnits(Enum):
-    ALTITUDE = "m"  # Meters
-    TEMPERATURE = "°C"  # Degrees Celsius
-    PRESSURE = "kPa"  # Kilopascals
-    VOLTAGE = "V"  # Volts
-    GYRO = "°s⁻¹"  # Degrees per second
-    GYRO_ROTATION_RATE = "°s⁻¹"  # Degrees per second
-    ACCELERATION = "°s⁻²"  # Degrees per second squared
-    MAGNETOMETER = "G"  # Gauss
-    GPS_TIME = ""  # No unit for GPS time
-    GPS_LATITUDE = "°N"  # Degrees North
-    GPS_LONGITUDE = "°E"  # Degrees East
-    GPS_ALTITUDE = "m"  # Meters
-    GPS_SATELLITE_NUMBER = ""  # No unit for satellite count
-    COMMAND_ECHO = ""  # No unit for command echo
-    DESCENT_RATE = "ms⁻¹"  # Meters per second
-    GEOGRAPHIC_HEADING = "°"  # Degrees
+    ALTITUDE = "m"
+    TEMPERATURE = "°C"
+    PRESSURE = "kPa"
+    VOLTAGE = "V"
+    GYRO = "°s⁻¹"
+    GYRO_ROTATION_RATE = "°s⁻¹"
+    ACCELERATION = "°s⁻²"
+    MAGNETOMETER = "G"
+    GPS_TIME = ""
+    GPS_LATITUDE = "°N"
+    GPS_LONGITUDE = "°E"
+    GPS_ALTITUDE = "m"
+    GPS_SATELLITE_NUMBER = ""
+    COMMAND_ECHO = ""
+    DESCENT_RATE = "ms⁻¹"
+    GEOGRAPHIC_HEADING = "°"
+
+
+class Mechanism(Enum):
+    CAM1 = "CAM1"
+    CAM2 = "CAM2"
+    GYRO = "GYRO"

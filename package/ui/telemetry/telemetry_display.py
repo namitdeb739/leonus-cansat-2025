@@ -1,3 +1,4 @@
+from math import nan
 from PyQt6.QtWidgets import (
     QWidget,
     QLabel,
@@ -6,21 +7,26 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt
-from package.models.telemetry import Telemetry
+from package.models.telemetry import Mode, State, Telemetry
 from PyQt6.QtGui import QGuiApplication
 from package.constants import TelemetryFields, TelemetryUnits
 
 
 class TelemetryDisplay(QWidget):
+    WIDTH_RATIO = 0.65
+
     def __init__(self):
         super().__init__()
         self.telemetry = None
-        self.labels: dict[str, QLabel] = {}
+        self.labels: dict[str, tuple[QLabel, QLabel]] = {}
         self.__initialize_ui()
 
     def __initialize_ui(self) -> None:
         self.setMinimumWidth(
-            int(QGuiApplication.primaryScreen().geometry().width() * 0.49)
+            int(
+                QGuiApplication.primaryScreen().geometry().width()
+                * TelemetryDisplay.WIDTH_RATIO
+            )
         )
 
         main_layout = QVBoxLayout()
@@ -124,11 +130,11 @@ class TelemetryDisplay(QWidget):
                     if self.telemetry
                     else ""
                 ),
+            },
+            {
                 TelemetryFields.GPS_SATELLITE_NUMBER: (
                     str(self.telemetry.gps.sats) if self.telemetry else ""
                 ),
-            },
-            {
                 TelemetryFields.COMMAND_ECHO: (
                     str(self.telemetry.cmd_echo) if self.telemetry else ""
                 ),
@@ -151,148 +157,159 @@ class TelemetryDisplay(QWidget):
         grid.setAlignment(Qt.AlignmentFlag.AlignHCenter)
 
         for i in range(
-            max(len(field_set) for field_set in self.telemetry_fields)
+            2 * max(len(field_set) for field_set in self.telemetry_fields)
         ):
-            grid.setColumnMinimumWidth(i, self.minimumWidth() // 5)
+            adjustment = -100 if i % 2 == 0 or i == 3 else 100
+            base_width = self.minimumWidth() // 8
+            grid.setColumnMinimumWidth(
+                i, base_width + (adjustment if i != 3 else -50)
+            )
 
         row = 0
         for field_set in self.telemetry_fields:
             col = 0
             for field, value in field_set.items():
-                label = QLabel(self.__format_label(field, value))
-                label.setAlignment(Qt.AlignmentFlag.AlignLeft)
-                label.setSizePolicy(
+                field_label = QLabel(self.__bold_label(field))
+                field_label.setAlignment(Qt.AlignmentFlag.AlignLeft)
+                field_label.setSizePolicy(
+                    QSizePolicy.Policy.Minimum, QSizePolicy.Policy.Minimum
+                )
+                grid.addWidget(
+                    field_label, row, col, alignment=Qt.AlignmentFlag.AlignLeft
+                )
+
+                col += 1
+
+                value_label = QLabel(value)
+                value_label.setAlignment(Qt.AlignmentFlag.AlignRight)
+                value_label.setSizePolicy(
                     QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Minimum
                 )
                 grid.addWidget(
-                    label, row, col, alignment=Qt.AlignmentFlag.AlignLeft
+                    value_label,
+                    row,
+                    col,
+                    alignment=Qt.AlignmentFlag.AlignRight,
                 )
 
-                self.labels[field] = label
+                self.labels[field] = (field_label, value_label)
                 col += 1
+
             row += 1
 
         container.setLayout(grid)
 
         return container
 
-    def __format_label(self, field: TelemetryFields, value: str) -> str:
-        return f"<b>{field.value}:</b> {value}"
+    def __bold_label(self, field: TelemetryFields) -> str:
+        return f"<b>{field.value}:</b>"
+
+    def __update_label(
+        self, field: TelemetryFields, value: str, unit: str
+    ) -> None:
+        _, value_label = self.labels[field]
+        value_label.setText(f"{value}{unit}" if value else "")
 
     def update(self, telemetry: Telemetry) -> None:
         self.telemetry = telemetry
 
-        self.labels[TelemetryFields.TIME].setText(
-            self.__format_label(
-                TelemetryFields.TIME, f"UTC {telemetry.mission_time}"
-            )
+        self.__update_label(
+            TelemetryFields.TIME,
+            f"UTC {telemetry.mission_time}",
+            "",
         )
-        self.labels[TelemetryFields.PACKET_COUNT].setText(
-            self.__format_label(
-                TelemetryFields.PACKET_COUNT, str(telemetry.packet_count)
-            )
+        self.__update_label(
+            TelemetryFields.PACKET_COUNT,
+            str(telemetry.packet_count),
+            "",
         )
-        self.labels[TelemetryFields.MODE].setText(
-            self.__format_label(TelemetryFields.MODE, str(telemetry.mode))
+        self.__update_label(
+            TelemetryFields.MODE,
+            telemetry.display_mode(),
+            "",
         )
-        self.labels[TelemetryFields.STATE].setText(
-            self.__format_label(TelemetryFields.STATE, str(telemetry.state))
+        self.__update_label(
+            TelemetryFields.STATE,
+            telemetry.display_state(),
+            "",
         )
-
-        self.labels[TelemetryFields.ALTITUDE].setText(
-            self.__format_label(
-                TelemetryFields.ALTITUDE,
-                f"{telemetry.altitude}{TelemetryUnits.ALTITUDE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.ALTITUDE,
+            f"{telemetry.display_number(telemetry.altitude)}",
+            TelemetryUnits.ALTITUDE.value,
         )
-        self.labels[TelemetryFields.TEMPERATURE].setText(
-            self.__format_label(
-                TelemetryFields.TEMPERATURE,
-                f"{telemetry.temperature}{TelemetryUnits.TEMPERATURE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.TEMPERATURE,
+            f"{telemetry.display_number(telemetry.temperature)}",
+            TelemetryUnits.TEMPERATURE.value,
         )
-        self.labels[TelemetryFields.PRESSURE].setText(
-            self.__format_label(
-                TelemetryFields.PRESSURE,
-                f"{telemetry.pressure}{TelemetryUnits.PRESSURE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.PRESSURE,
+            f"{telemetry.display_number(telemetry.pressure)}",
+            TelemetryUnits.PRESSURE.value,
         )
-        self.labels[TelemetryFields.VOLTAGE].setText(
-            self.__format_label(
-                TelemetryFields.VOLTAGE,
-                f"{telemetry.voltage}{TelemetryUnits.VOLTAGE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.VOLTAGE,
+            f"{telemetry.display_number(telemetry.voltage)}",
+            TelemetryUnits.VOLTAGE.value,
         )
-
-        self.labels[TelemetryFields.GYRO].setText(
-            self.__format_label(
-                TelemetryFields.GYRO,
-                f"{telemetry.gyro}{TelemetryUnits.GYRO.value}",
-            )
+        self.__update_label(
+            TelemetryFields.GYRO,
+            f"{telemetry.display_number(telemetry.gyro)}",
+            TelemetryUnits.GYRO.value,
         )
-        self.labels[TelemetryFields.GYRO_ROTATION_RATE].setText(
-            self.__format_label(
-                TelemetryFields.GYRO_ROTATION_RATE,
-                f"{telemetry.auto_gyro_rotation_rate}{TelemetryUnits.GYRO_ROTATION_RATE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.GYRO_ROTATION_RATE,
+            f"{telemetry.display_number(telemetry.auto_gyro_rotation_rate)}",
+            TelemetryUnits.GYRO_ROTATION_RATE.value,
         )
-        self.labels[TelemetryFields.ACCELERATION].setText(
-            self.__format_label(
-                TelemetryFields.ACCELERATION,
-                f"{telemetry.acceleration}{TelemetryUnits.ACCELERATION.value}",
-            )
+        self.__update_label(
+            TelemetryFields.ACCELERATION,
+            f"{telemetry.display_number(telemetry.acceleration)}",
+            TelemetryUnits.ACCELERATION.value,
         )
-        self.labels[TelemetryFields.MAGNETOMETER].setText(
-            self.__format_label(
-                TelemetryFields.MAGNETOMETER,
-                f"{telemetry.magnetometer}{TelemetryUnits.MAGNETOMETER.value}",
-            )
+        self.__update_label(
+            TelemetryFields.MAGNETOMETER,
+            f"{telemetry.display_number(telemetry.magnetometer)}",
+            TelemetryUnits.MAGNETOMETER.value,
         )
-
-        self.labels[TelemetryFields.GPS_TIME].setText(
-            self.__format_label(
-                TelemetryFields.GPS_TIME, f"UTC {telemetry.gps.time}"
-            )
+        self.__update_label(
+            TelemetryFields.GPS_TIME,
+            f"UTC {telemetry.gps.time}",
+            "",
         )
-        self.labels[TelemetryFields.GPS_LATITUDE].setText(
-            self.__format_label(
-                TelemetryFields.GPS_LATITUDE,
-                f"{telemetry.gps.latitude}{TelemetryUnits.GPS_LATITUDE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.GPS_LATITUDE,
+            f"{telemetry.display_number(telemetry.gps_latitude())}",
+            TelemetryUnits.GPS_LATITUDE.value,
         )
-        self.labels[TelemetryFields.GPS_LONGITUDE].setText(
-            self.__format_label(
-                TelemetryFields.GPS_LONGITUDE,
-                f"{telemetry.gps.longitude}{TelemetryUnits.GPS_LONGITUDE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.GPS_LONGITUDE,
+            f"{telemetry.display_number(telemetry.gps_longitude())}",
+            TelemetryUnits.GPS_LONGITUDE.value,
         )
-        self.labels[TelemetryFields.GPS_ALTITUDE].setText(
-            self.__format_label(
-                TelemetryFields.GPS_ALTITUDE,
-                f"{telemetry.gps.altitude}{TelemetryUnits.GPS_ALTITUDE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.GPS_ALTITUDE,
+            f"{telemetry.display_number(telemetry.gps_altitude())}",
+            TelemetryUnits.GPS_ALTITUDE.value,
         )
-        self.labels[TelemetryFields.GPS_SATELLITE_NUMBER].setText(
-            self.__format_label(
-                TelemetryFields.GPS_SATELLITE_NUMBER,
-                str(telemetry.gps.sats),
-            )
+        self.__update_label(
+            TelemetryFields.GPS_SATELLITE_NUMBER,
+            telemetry.display_number(telemetry.gps_sats()),
+            "",
         )
-
-        self.labels[TelemetryFields.COMMAND_ECHO].setText(
-            self.__format_label(
-                TelemetryFields.COMMAND_ECHO, str(telemetry.cmd_echo)
-            )
+        self.__update_label(
+            TelemetryFields.COMMAND_ECHO,
+            str(telemetry.cmd_echo),
+            "",
         )
-        self.labels[TelemetryFields.DESCENT_RATE].setText(
-            self.__format_label(
-                TelemetryFields.DESCENT_RATE,
-                f"{telemetry.descent_rate}{TelemetryUnits.DESCENT_RATE.value}",
-            )
+        self.__update_label(
+            TelemetryFields.DESCENT_RATE,
+            f"{telemetry.display_number(telemetry.descent_rate)}",
+            TelemetryUnits.DESCENT_RATE.value,
         )
-        self.labels[TelemetryFields.GEOGRAPHIC_HEADING].setText(
-            self.__format_label(
-                TelemetryFields.GEOGRAPHIC_HEADING,
-                f"{telemetry.geographic_heading}{TelemetryUnits.GEOGRAPHIC_HEADING.value}",
-            )
+        self.__update_label(
+            TelemetryFields.GEOGRAPHIC_HEADING,
+            f"{telemetry.display_number(telemetry.geographic_heading)}",
+            TelemetryUnits.GEOGRAPHIC_HEADING.value,
         )

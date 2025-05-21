@@ -11,6 +11,7 @@ from PyQt6.QtGui import QGuiApplication
 
 
 class Log(QWidget):
+    HEIGHT_RATIO = 0.40
     def __init__(self):
         super().__init__()
         self.most_recent_log = None
@@ -23,8 +24,9 @@ class Log(QWidget):
             QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Expanding
         )
         self.setMaximumHeight(
-            int(QGuiApplication.primaryScreen().geometry().height() * 0.3)
+            int(QGuiApplication.primaryScreen().geometry().height() * Log.HEIGHT_RATIO)
         )
+        self.scroll_area.verticalScrollBar().setFixedWidth(10)
 
         self.container = QWidget()
         self.main_layout = QVBoxLayout()

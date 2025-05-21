@@ -1,16 +1,26 @@
+from curses import raw
 import queue
-from digi.xbee.devices import XBeeDevice
-from package.models.telemetry import Telemetry, PrincipalAxesCoordinate, GPS
+import threading
+import time
+from digi.xbee.devices import XBeeDevice, XBeeMessage
+from package.models.telemetry import (
+    Mode,
+    State,
+    Telemetry,
+    PrincipalAxesCoordinate,
+    GPS,
+)
 from package.ui.log.log import Log
 
 
 class Receiver:
-    DATA_START_INDEX, DATA_END_INDEX = 1, -2
-    FIELD_COUNT = 27
+    DATA_START_INDEX, DATA_END_INDEX = 1, -3
+    FIELD_COUNT = 28
 
     def __init__(self, device: XBeeDevice) -> None:
         self.device = device
         self.data_queue: queue.Queue[str] = queue.Queue()
+        self.log_queue: queue.Queue[str] = queue.Queue()  # Add a log queue
         self.packet_count = -1
         self.logger = None
         self.device.add_data_received_callback(
@@ -18,38 +28,27 @@ class Receiver:
                 xbee_message.data.decode()
             )
         )
-
-    def __data_received_callback(self, data: str) -> None:
-        try:
-            raw_data = data.data.decode()[
-                Receiver.DATA_START_INDEX : Receiver.DATA_END_INDEX
-            ]
-            self.data_queue.put(raw_data)
-        except OSError as e:
-            if self.logger:
-                self.logger.log(f"OS error in data callback: {e}")
-        except Exception as e:
-            if self.logger:
-                self.logger.log(f"Error in data callback: {e}")
+        self.time_recieved_first_packet = None
 
     def __parse_data(self, data: str) -> Telemetry:
         if not data:
             return None
 
-        fields = data.split(",")
+        fields = [field.strip() for field in data.split(",")]
 
         if len(fields) != Receiver.FIELD_COUNT:
             self.logger.log(
                 f"Invalid data format. Expected {Receiver.FIELD_COUNT} fields, got {len(fields)}"
             )
+            self.logger.log(f"Received data: {data}")
             return None
 
         try:
             team_id = int(fields[0])
             mission_time = fields[1]
             packet_count = int(fields[2])
-            mode = fields[3]
-            state = fields[4]
+            mode = Mode(fields[3])
+            state = State(fields[4])
             altitude = float(fields[5])
             temperature = float(fields[6])
             pressure = float(fields[7])
@@ -64,8 +63,13 @@ class Receiver:
             gps_longitude = float(fields[22])
             gps_sats = int(fields[23])
             cmd_echo = fields[24]
-            descent_rate = float(fields[25])
-            geographic_heading = int(fields[26])
+            descent_rate = float(fields[26])
+            geographic_heading = int(fields[27])
+
+            if self.time_recieved_first_packet is None:
+                self.time_recieved_first_packet = time.strftime(
+                    "%H:%M:%S", time.localtime()
+                )
 
             return Telemetry(
                 team_id=team_id,
@@ -112,8 +116,6 @@ class Receiver:
         try:
             raw_data = self.data_queue.get_nowait()
         except queue.Empty:
-            if self.logger:
-                self.logger.log("No data available in the queue.")
             return None
 
         telemetry = self.__parse_data(raw_data)
@@ -129,3 +131,27 @@ class Receiver:
 
     def set_logger(self, logger: Log) -> None:
         self.logger = logger
+
+    def __log(self, message: str) -> None:
+        if self.logger:
+            if threading.current_thread() is threading.main_thread():
+                self.logger.log(message)
+            else:
+                self.log_queue.put(message)
+
+    def process_log_queue(self) -> None:
+        while not self.log_queue.empty():
+            message = self.log_queue.get()
+            if self.logger:
+                self.logger.log(message)
+
+    def __data_received_callback(self, data: str) -> None:
+        try:
+            raw_data = data[
+                Receiver.DATA_START_INDEX : Receiver.DATA_END_INDEX
+            ]
+            self.data_queue.put(raw_data)
+        except OSError as e:
+            self.__log(f"OS error in data callback: {e}")
+        except Exception as e:
+            self.__log(f"Error in data callback: {e}")

@@ -136,7 +136,8 @@ ControlPanel > QFrame QPushButton:checked {
   font-weight: bold;
 }
 
-.flash-button {
+.flash-button,
+.check-button {
   background-color: #ef7c00;
   color: #020612;
   font-size: 12px;

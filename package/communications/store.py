@@ -27,7 +27,7 @@ class Store:
 
     def __open_file(self) -> TextIOWrapper:
         os.makedirs(os.path.dirname(self.file_path), exist_ok=True)
-        return open(self.file_path, mode="a", newline="",buffering=1)
+        return open(self.file_path, mode="a", newline="", buffering=1)
 
     def __write_header(self) -> None:
         self.writer.writerow(
@@ -57,6 +57,7 @@ class Store:
                 constants.TelemetryFieldsCSVHeadings.GPS_LONGITUDE.value,
                 constants.TelemetryFieldsCSVHeadings.GPS_SATS.value,
                 constants.TelemetryFieldsCSVHeadings.CMD_ECHO.value,
+                constants.TelemetryFieldsCSVHeadings.BLANK.value,
                 constants.TelemetryFieldsCSVHeadings.DESC_RATE.value,
                 constants.TelemetryFieldsCSVHeadings.GEOG_HEAD.value,
             ]
@@ -76,8 +77,8 @@ class Store:
                 telemetry.team_id,
                 telemetry.mission_time,
                 telemetry.packet_count,
-                telemetry.mode,
-                telemetry.state,
+                telemetry.mode.value,
+                telemetry.state.value,
                 telemetry.altitude,
                 telemetry.temperature,
                 telemetry.pressure,
@@ -98,12 +99,13 @@ class Store:
                 telemetry.gps.longitude,
                 telemetry.gps.sats,
                 telemetry.cmd_echo,
+                "",
                 telemetry.descent_rate,
                 telemetry.geographic_heading,
             ]
         )
 
-    def close(self) -> None:
+    def close(self, time_recieved_first_packet: str) -> None:
         self.file.close()
         if (
             os.stat(self.file_path).st_size == 0
@@ -114,7 +116,11 @@ class Store:
             if not os.listdir(parent_dir):
                 os.rmdir(parent_dir)
             return
-        self.plotter.generate_plots()
+
+        if time_recieved_first_packet is None:
+            return
+
+        self.plotter.generate_plots(time_recieved_first_packet)
 
     def set_logger(self, logger: Log) -> None:
         self.logger = logger

@@ -1,3 +1,4 @@
+from re import S
 from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -16,6 +17,9 @@ from PyQt6.QtGui import QGuiApplication
 
 
 class Body(QWidget):
+    SIDEBAR_WIDTH_RATIO = 0.40
+    HEIGHT_RATIO = 0.85
+
     def __init__(self, communication: Communication) -> None:
         super().__init__()
         self.setSizePolicy(
@@ -23,7 +27,10 @@ class Body(QWidget):
         )
 
         self.setMinimumHeight(
-            int(QGuiApplication.primaryScreen().geometry().height() * 0.7)
+            int(
+                QGuiApplication.primaryScreen().geometry().height()
+                * Body.HEIGHT_RATIO
+            )
         )
 
         self.control_panel = None
@@ -39,7 +46,10 @@ class Body(QWidget):
         sidebar = self.__create_sidebar(communication)
         layout.addWidget(sidebar)
         sidebar.setMaximumWidth(
-            int(QGuiApplication.primaryScreen().geometry().width() * 0.24)
+            int(
+                QGuiApplication.primaryScreen().geometry().width()
+                * Body.SIDEBAR_WIDTH_RATIO
+            )
         )
 
         self.graph_view = GraphView()

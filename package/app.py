@@ -1,18 +1,10 @@
 import atexit
-from datetime import datetime
-import random
+import time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
-from package import constants
 from package.communications.communication import Communication
 from package.constants import APP_INFO, GEOMETRY
 from package.models.telemetry import (
-    GPS,
-    Command,
-    Mode,
-    OnOff,
-    PrincipalAxesCoordinate,
-    State,
     Telemetry,
 )
 from package.ui.main_window import MainWindow
@@ -25,6 +17,8 @@ from package.constants import Colours
 class App(QApplication):
 
     STYLESHEET_PATH = "./styles/styles.css"
+    ONE_SECOND = 1000
+    TIMER_INTERVAL = 250
 
     def __init__(self, sys_argv: list[str], dev_mode: DevMode) -> None:
         super().__init__(sys_argv)
@@ -43,16 +37,16 @@ class App(QApplication):
 
         self.communication.set_logger(self.logger)
         self.logger.log("Enabling telemetry storage...")
-        
+
+        self.update_call_count = 0
+
         atexit.register(self.on_exit)
 
-        # TEST ZONE
-        self.packet_count = 0
-        self.last = ""
+        self.last_recieved_packet = -1
 
     def run(self) -> int:
         self.main_window.show()
-        self.__setup_timer(250)
+        self.__setup_timer(App.TIMER_INTERVAL)
 
         return self.exec()
 
@@ -62,10 +56,13 @@ class App(QApplication):
         self.timer.start(interval)
 
     def __update(self) -> None:
+        self.update_call_count = (self.update_call_count + 1) % (
+            App.ONE_SECOND // App.TIMER_INTERVAL
+        )
         self.main_window.update_time()
 
         # TEST ZONE START
-        if self.last == datetime.now().strftime("%H:%M:%S"):
+        """ if self.last == datetime.now().strftime("%H:%M:%S"):
             return
         self.last = datetime.now().strftime("%H:%M:%S")
         self.packet_count += 1
@@ -85,14 +82,14 @@ class App(QApplication):
                 yaw=round(random.uniform(-180, 180), 1),
             ),
             acceleration=PrincipalAxesCoordinate(
-                roll=round(random.uniform(-10, 10), 1),
-                pitch=round(random.uniform(-10, 10), 1),
-                yaw=round(random.uniform(-10, 10), 1),
+                roll=round(random.uniform(100, 999), 1),
+                pitch=round(random.uniform(100, 999), 1),
+                yaw=round(random.uniform(100, 999), 1),
             ),
             magnetometer=PrincipalAxesCoordinate(
-                roll=round(random.uniform(-100, 100), 1),
-                pitch=round(random.uniform(-100, 100), 1),
-                yaw=round(random.uniform(-100, 100), 1),
+                    roll=round(random.uniform(100, 999), 1),
+                pitch=round(random.uniform(100, 999), 1),
+                yaw=round(random.uniform(100, 999), 1),
             ),
             auto_gyro_rotation_rate=random.randint(0, 360),
             gps=GPS(
@@ -110,8 +107,7 @@ class App(QApplication):
         )
 
         self.main_window.update(t)
-        self.communication.save(t)
-
+        self.communication.save(t) """
         # TEST ZONE END
 
         if not self.__check_connection():
@@ -122,6 +118,7 @@ class App(QApplication):
         if (
             self.__is_simulation_mode()
             and self.__has_simulated_pressure_commands()
+            and self.update_call_count == 0
         ):
             self.__send_next_simulated_pressure()
 
@@ -130,8 +127,17 @@ class App(QApplication):
         if telemetry is None:
             return
 
+        if self.__package_drop_detected(telemetry):
+            self.logger.log(
+                f"Telemetry packet count mismatch: {self.last_recieved_packet} -> {telemetry.packet_count}. Missing packets {[i for i in range(self.last_recieved_packet + 1, telemetry.packet_count)]}"
+            )
+
         self.main_window.update(telemetry)
         self.communication.save(telemetry)
+        self.last_recieved_packet = telemetry.packet_count
+
+    def __package_drop_detected(self, telemetry):
+        return abs(telemetry.packet_count - self.last_recieved_packet) > 1
 
     def __check_connection(self) -> bool:
         if not self.communication.device_is_connected():
