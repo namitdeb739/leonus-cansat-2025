@@ -54,3 +54,9 @@ class ControlPanel(QWidget):
 
     def is_simulation_mode(self) -> bool:
         return self.mode_control.is_simulation_mode()
+
+    def activate_command_control(self) -> None:
+        self.command_control.activate_all_buttons()
+
+    def deactivate_command_control(self) -> None:
+        self.command_control.deactivate_all_buttons()

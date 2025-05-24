@@ -45,7 +45,7 @@ class PrincipalAxesCoordinate:
     yaw: float
 
     def __str__(self) -> str:
-        return f"({self.roll}, {self.pitch}, {self.yaw})"
+        return f"({self.roll:,}, {self.pitch:,}, {self.yaw:,})"
 
 
 @dataclass
@@ -233,10 +233,19 @@ class Telemetry:
         if number == nan or str(number) == "nan":
             return "NaN"
         else:
-            return str(number)
+            return f"{number:,}"
 
     def display_mode(self) -> str:
         return str(self.mode)
 
     def display_state(self) -> str:
         return str(self.state)
+
+    def display_principal_axes_coordinate(
+        self, coord: PrincipalAxesCoordinate
+    ) -> tuple[str, str, str]:
+        return (
+            self.display_number(coord.roll),
+            self.display_number(coord.pitch),
+            self.display_number(coord.yaw),
+        )

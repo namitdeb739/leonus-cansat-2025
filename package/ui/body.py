@@ -87,3 +87,9 @@ class Body(QWidget):
 
     def is_simulation_mode(self) -> bool:
         return self.control_panel.is_simulation_mode()
+
+    def activate_command_control(self) -> None:
+        self.control_panel.activate_command_control()
+
+    def deactivate_command_control(self) -> None:
+        self.control_panel.deactivate_command_control()

@@ -1,8 +1,7 @@
-from curses import raw
 import queue
 import threading
 import time
-from digi.xbee.devices import XBeeDevice, XBeeMessage
+from digi.xbee.devices import XBeeDevice
 from package.models.telemetry import (
     Mode,
     State,
@@ -20,7 +19,7 @@ class Receiver:
     def __init__(self, device: XBeeDevice) -> None:
         self.device = device
         self.data_queue: queue.Queue[str] = queue.Queue()
-        self.log_queue: queue.Queue[str] = queue.Queue()  # Add a log queue
+        self.log_queue: queue.Queue[str] = queue.Queue()
         self.packet_count = -1
         self.logger = None
         self.device.add_data_received_callback(
@@ -116,6 +115,8 @@ class Receiver:
         try:
             raw_data = self.data_queue.get_nowait()
         except queue.Empty:
+            # if self.logger:
+            # self.logger.log("No data received.")
             return None
 
         telemetry = self.__parse_data(raw_data)

@@ -124,5 +124,5 @@ class Graph(pg.PlotItem):
             self.graph_data[i] = np.append(self.graph_data[i], float(value))
             self.graph_plots[i].setData(self.graph_data[i])
             self.graph_value_labels[i].setText(
-                f"{self.line_names[i]}: {value if value != nan else "NaN"}"
+                f"{self.line_names[i]}: {f"{value:,}" if value != nan else "NaN"}"
             )

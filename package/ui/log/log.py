@@ -1,3 +1,4 @@
+from math import log
 from PyQt6.QtWidgets import (
     QWidget,
     QLabel,
@@ -9,9 +10,12 @@ from PyQt6.QtCore import Qt
 from datetime import datetime
 from PyQt6.QtGui import QGuiApplication
 
+from package import constants
+
 
 class Log(QWidget):
     HEIGHT_RATIO = 0.40
+
     def __init__(self):
         super().__init__()
         self.most_recent_log = None
@@ -24,9 +28,15 @@ class Log(QWidget):
             QSizePolicy.Policy.Maximum, QSizePolicy.Policy.Expanding
         )
         self.setMaximumHeight(
-            int(QGuiApplication.primaryScreen().geometry().height() * Log.HEIGHT_RATIO)
+            int(
+                QGuiApplication.primaryScreen().geometry().height()
+                * Log.HEIGHT_RATIO
+            )
         )
         self.scroll_area.verticalScrollBar().setFixedWidth(10)
+        # self.scroll_area.verticalScrollBar().setStyleSheet(
+        #     Log.SCROLL_AREA_SCROLLBAR_STYLE
+        # )
 
         self.container = QWidget()
         self.main_layout = QVBoxLayout()
@@ -66,8 +76,11 @@ class Log(QWidget):
         self.most_recent_log = log_message
         self.main_layout.addWidget(log_label)
         self.container.adjustSize()
+        self.__adjust_scroll_bar()
+        print(log_message)
+
+    def __adjust_scroll_bar(self):
         self.scroll_area.verticalScrollBar().setValue(
             self.scroll_area.verticalScrollBar().maximum()
         )
         self.scroll_area.horizontalScrollBar().setVisible(False)
-        print(log_message)

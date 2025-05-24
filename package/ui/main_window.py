@@ -68,10 +68,10 @@ class MainWindow(QMainWindow):
 
         self.setCentralWidget(central_widget)
 
-    def __create_spacer(
-        self, height: int, policy: QSizePolicy.Policy
-    ) -> QSpacerItem:
-        return QSpacerItem(0, height, policy, QSizePolicy.Policy.Fixed)
+    # def __create_spacer(
+    #     self, height: int, policy: QSizePolicy.Policy
+    # ) -> QSpacerItem:
+    #     return QSpacerItem(0, height, policy, QSizePolicy.Policy.Fixed)
 
     def logger(self) -> Log:
         return self.body.log_display()
@@ -87,3 +87,9 @@ class MainWindow(QMainWindow):
 
     def update_time(self) -> None:
         self.header.update_time()
+
+    def activate_command_control(self) -> None:
+        self.body.activate_command_control()
+
+    def deactivate_command_control(self) -> None:
+        self.body.deactivate_command_control()

@@ -1,5 +1,4 @@
 import atexit
-import time
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
 from package.communications.communication import Communication
@@ -56,6 +55,11 @@ class App(QApplication):
         self.timer.start(interval)
 
     def __update(self) -> None:
+        if self.communication.sender_initialised():
+            self.main_window.activate_command_control()
+        else:
+            self.main_window.deactivate_command_control()
+
         self.update_call_count = (self.update_call_count + 1) % (
             App.ONE_SECOND // App.TIMER_INTERVAL
         )
@@ -68,6 +72,7 @@ class App(QApplication):
         self.packet_count += 1
         t = Telemetry(
             team_id=APP_INFO.team_id(),
+
             mission_time=datetime.now().strftime("%H:%M:%S"),
             packet_count=self.packet_count,
             mode=random.choice(list(Mode)),
@@ -136,7 +141,7 @@ class App(QApplication):
         self.communication.save(telemetry)
         self.last_recieved_packet = telemetry.packet_count
 
-    def __package_drop_detected(self, telemetry):
+    def __package_drop_detected(self, telemetry: Telemetry) -> bool:
         return abs(telemetry.packet_count - self.last_recieved_packet) > 1
 
     def __check_connection(self) -> bool:

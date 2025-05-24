@@ -129,27 +129,32 @@ class Communication:
         return self.remote_device is not None
 
     def receive(self) -> Telemetry:
+
         try:
             if not self.device or not self.device.is_open():
                 self.logger.log("Device is not open. Cannot receive data.")
+
                 return None
 
             if not self.remote_device:
                 self.logger.log(
                     "Remote device is not found. Cannot receive data."
                 )
+
                 return None
 
             if not self.receiver:
                 self.logger.log(
                     "Receiver is not initialised. Cannot receive data."
                 )
+
                 return None
 
             return self.receiver.receive()
         except (OSError, SerialException) as e:
             self.logger.log(f"Error receiving data: {e}")
             self.device.close()
+
             return None
 
     def has_simulated_pressure(self) -> bool:
@@ -161,6 +166,15 @@ class Communication:
             return False
 
         return self.sender.has_simulated_pressure()
+
+    def start(self) -> None:
+        if not self.sender:
+            self.logger.log(
+                Communication.SENDER_NOT_INITIALISED_MESSAGE % "start"
+            )
+            raise SenderNotInitialisedException()
+
+        self.sender.start()
 
     def enable_store(self) -> None:
         self.logger.log("Enabling telemetry storage...")
@@ -271,3 +285,6 @@ class Communication:
 
     def save(self, telemetry: Telemetry) -> None:
         self.store.write(telemetry)
+
+    def sender_initialised(self) -> bool:
+        return self.sender is not None and self.sender.is_initialised()

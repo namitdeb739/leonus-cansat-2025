@@ -7,6 +7,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt
+from numpy import roll
 from package.models.telemetry import Mode, State, Telemetry
 from PyQt6.QtGui import QGuiApplication
 from package.constants import TelemetryFields, TelemetryUnits
@@ -159,7 +160,7 @@ class TelemetryDisplay(QWidget):
         for i in range(
             2 * max(len(field_set) for field_set in self.telemetry_fields)
         ):
-            adjustment = -100 if i % 2 == 0 or i == 3 else 100
+            adjustment = -200 if i % 2 == 0 or i == 3 else 200
             base_width = self.minimumWidth() // 8
             grid.setColumnMinimumWidth(
                 i, base_width + (adjustment if i != 3 else -50)
@@ -191,6 +192,8 @@ class TelemetryDisplay(QWidget):
                     col,
                     alignment=Qt.AlignmentFlag.AlignRight,
                 )
+                # if field==TelemetryFields.ACCELERATION:
+                value_label.setWordWrap(True)
 
                 self.labels[field] = (field_label, value_label)
                 col += 1
@@ -205,10 +208,21 @@ class TelemetryDisplay(QWidget):
         return f"<b>{field.value}:</b>"
 
     def __update_label(
-        self, field: TelemetryFields, value: str, unit: str
+        self,
+        field: TelemetryFields,
+        value: str | tuple[str, str, str],
+        unit: str,
     ) -> None:
         _, value_label = self.labels[field]
-        value_label.setText(f"{value}{unit}" if value else "")
+        if isinstance(value, tuple):
+            roll, pitch, yaw = value
+            value_label.setText(
+                f"{roll}{unit}\n{pitch}{unit}\n{yaw}{unit}"
+                if (roll and pitch and yaw)
+                else ""
+            )
+        elif isinstance(value, str):
+            value_label.setText(f"{value}{unit}" if value else "")
 
     def update(self, telemetry: Telemetry) -> None:
         self.telemetry = telemetry
@@ -255,7 +269,7 @@ class TelemetryDisplay(QWidget):
         )
         self.__update_label(
             TelemetryFields.GYRO,
-            f"{telemetry.display_number(telemetry.gyro)}",
+            telemetry.display_principal_axes_coordinate(telemetry.gyro),
             TelemetryUnits.GYRO.value,
         )
         self.__update_label(
@@ -265,12 +279,16 @@ class TelemetryDisplay(QWidget):
         )
         self.__update_label(
             TelemetryFields.ACCELERATION,
-            f"{telemetry.display_number(telemetry.acceleration)}",
+            telemetry.display_principal_axes_coordinate(
+                telemetry.acceleration
+            ),
             TelemetryUnits.ACCELERATION.value,
         )
         self.__update_label(
             TelemetryFields.MAGNETOMETER,
-            f"{telemetry.display_number(telemetry.magnetometer)}",
+            telemetry.display_principal_axes_coordinate(
+                telemetry.magnetometer
+            ),
             TelemetryUnits.MAGNETOMETER.value,
         )
         self.__update_label(

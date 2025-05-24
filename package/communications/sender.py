@@ -46,6 +46,9 @@ class Sender:
         except XBeeException as e:
             self.logger.log(f"Error sending data: {e}")
 
+    def start(self) -> None:
+        self.__send("START")
+
     def payload_telemetry(self, on_off: OnOff) -> None:
         self.__send(f"CX, {on_off}")
 
@@ -62,7 +65,7 @@ class Sender:
         self.__send("CAL")
 
     def reset_eeprom(self) -> None:
-        self.__send("RSTEPRM")
+        self.__send("RST")
 
     def mechanism_actuation(self, device: str, on_off: OnOff) -> None:
         self.__send(f"MEC, {device}, {on_off}")
@@ -83,3 +86,6 @@ class Sender:
         self, simulated_pressure_commands: list[str]
     ) -> None:
         self.simulated_pressure_commands = simulated_pressure_commands
+
+    def is_initialised(self) -> bool:
+        return self.device.is_open() and self.remote_device is not None

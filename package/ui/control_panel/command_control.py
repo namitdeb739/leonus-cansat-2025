@@ -7,33 +7,21 @@ from PyQt6.QtWidgets import (
     QGridLayout,
     QFileDialog,
 )
-from PyQt6.QtCore import Qt, QTimer
-from pyparsing import C
+from PyQt6.QtCore import Qt
 from package.communications.communication import Communication
 from package.exceptions.SenderNotInitialisedException import (
     SenderNotInitialisedException,
 )
 from package.models.telemetry import OnOff, TimeSource
 from package.ui.control_panel.control_section import ControlSection
-from package.constants import Colours, Mechanism
+from package.constants import Mechanism
 from PyQt6.QtWidgets import QComboBox
 
 
 class CommandControl(ControlSection):
-    SELECT_FILE_STYLESHEET = f"background-color: {Colours.LIGHT_GREY.value}; color: {Colours.BLACK.value}"
-    SELECTED_FILE_STYLESHEET = f"background-color: {Colours.LIGHT_GREY.value}; color: {Colours.BLACK.value}; font-size: 10pt; font-weight: normal;"
-    MECHANISM_COMBOBOX_STYLESHEET = (
-        f"background-color: {Colours.LIGHT_GREY.value}; "
-        f"color: {Colours.BLACK.value}; "
-        "selection-background-color: #b0c4de; "
-        "border: 1px solid #aaa; "
-        "padding: 2px 6px;"
-        "border-radius: 4px;"
-        "font-weight: bold;"
-    )
-    CLASS = "class"
-    FLASH_BUTTON = "flash-button"
-    CHECK_BUTTON = "check-button"
+    SELECT_FILE_BUTTON = "select-file-button"
+    SELECTED_FILE_BUTTON = "selected-file-button"
+    MECHANISM_SELECTION = "mechanism-combobox"
 
     def __init__(self, communication: Communication):
         super().__init__()
@@ -44,12 +32,20 @@ class CommandControl(ControlSection):
         self.__setup_layout()
 
     def __initialize_buttons(self) -> None:
+        self.__initialise_start_button()
         self.__initialise_store_buttons()
         self.__initialise_set_time_buttons()
         self.__initialise_payload_telemetry_buttons()
         self.__initialise_simulated_pressure_buttons()
         self.__initialise_calibration_and_reset_buttons()
         self.__initialise_mechanism_actuation_buttons()
+
+    def __initialise_start_button(self) -> None:
+        self.start_button = self.__create_button(
+            "Start",
+            self.__press_start,
+        )
+        ControlSection.deactivate_button(self.start_button)
 
     def __initialise_mechanism_actuation_buttons(self) -> None:
         self.mechanism_selection = QComboBox()
@@ -59,9 +55,12 @@ class CommandControl(ControlSection):
         self.mechanism_selection.setSizePolicy(
             QSizePolicy.Policy.Expanding, QSizePolicy.Policy.MinimumExpanding
         )
-        self.mechanism_selection.setStyleSheet(
-            CommandControl.MECHANISM_COMBOBOX_STYLESHEET
+        self.mechanism_selection.setProperty(
+            CommandControl.CLASS,
+            CommandControl.MECHANISM_SELECTION,
         )
+        self.mechanism_selection
+
         self.mechanism_actuation_on = self.__create_button(
             "On",
             self.__press_mechanism_actuation_on,
@@ -69,6 +68,12 @@ class CommandControl(ControlSection):
         self.mechanism_actuation_off = self.__create_button(
             "Off",
             self.__press_mechanism_actuation_off,
+        )
+        ControlSection.deactivate_button(
+            self.mechanism_actuation_on,
+        )
+        ControlSection.deactivate_button(
+            self.mechanism_actuation_off,
         )
 
     def __initialise_calibration_and_reset_buttons(self) -> None:
@@ -78,8 +83,14 @@ class CommandControl(ControlSection):
         )
 
         self.reset_eeprom = self.__create_button(
-            "Reset EEPROM",
+            "Reset Telemetry",
             lambda: self.__press_reset_eeprom(),
+        )
+        ControlSection.deactivate_button(
+            self.calibrate_altitude,
+        )
+        ControlSection.deactivate_button(
+            self.reset_eeprom,
         )
 
     def __initialise_simulated_pressure_buttons(self) -> None:
@@ -91,8 +102,11 @@ class CommandControl(ControlSection):
             "Select File",
             self.__press_select_simulated_pressure_file,
         )
-        self.select_simulated_pressure_file.setStyleSheet(
-            CommandControl.SELECT_FILE_STYLESHEET
+        self.select_simulated_pressure_file.setProperty(
+            CommandControl.CLASS, CommandControl.SELECT_FILE_BUTTON
+        )
+        ControlSection.deactivate_button(
+            self.send_simulated_pressure,
         )
 
     def __initialise_payload_telemetry_buttons(self) -> None:
@@ -104,7 +118,13 @@ class CommandControl(ControlSection):
             "Off",
             self.__press_payload_telemetry_off,
         )
-        CommandControl.__check_button(self.payload_telemetry_off)
+        ControlSection.check_button(self.payload_telemetry_off)
+        ControlSection.deactivate_button(
+            self.payload_telemetry_on,
+        )
+        ControlSection.deactivate_button(
+            self.payload_telemetry_off,
+        )
 
     def __initialise_set_time_buttons(self) -> None:
         self.set_gcs_time = self.__create_button(
@@ -114,6 +134,12 @@ class CommandControl(ControlSection):
         self.set_gps_time = self.__create_button(
             "GPS Time",
             self.__press_set_gps_time,
+        )
+        ControlSection.deactivate_button(
+            self.set_gcs_time,
+        )
+        ControlSection.deactivate_button(
+            self.set_gps_time,
         )
 
     def __initialise_store_buttons(self) -> None:
@@ -125,10 +151,11 @@ class CommandControl(ControlSection):
             "Disable Store",
             self.__press_disable_store,
         )
-        CommandControl.__check_button(self.enable_store)
+        ControlSection.check_button(self.enable_store)
 
     def __setup_layout(self) -> None:
         command_controls = {
+            "Start": [self.start_button],
             "Store": [self.enable_store, self.disable_store],
             "Payload Telemetry": [
                 self.payload_telemetry_on,
@@ -152,10 +179,6 @@ class CommandControl(ControlSection):
 
         self.__setup_button_grid(command_controls, layout)
 
-        # layout.setColumnStretch(0, 0)
-        # for col in range(1, layout.columnCount()):
-        #     layout.setColumnStretch(col, 1)
-
         self.setLayout(layout)
 
     def __setup_button_grid(
@@ -174,14 +197,28 @@ class CommandControl(ControlSection):
                 0,
                 Qt.AlignmentFlag.AlignLeft,
             )
-            self.__populate_button_row(layout, row, buttons)
+            self.__populate_button_row(
+                layout,
+                row,
+                buttons,
+                max([len(b) for b in command_controls.values()]),
+            )
 
     def __populate_button_row(
-        self, layout: QGridLayout, row: int, buttons: list[QPushButton]
+        self,
+        layout: QGridLayout,
+        row: int,
+        buttons: list[QPushButton],
+        columnCount: int,
     ) -> None:
         for column, button in enumerate(buttons):
             layout.addWidget(
-                button, row, column + 1, Qt.AlignmentFlag.AlignVCenter
+                button,
+                row,
+                column + 1,
+                1,
+                1 if len(buttons) > 1 else columnCount,
+                Qt.AlignmentFlag.AlignCenter,
             )
 
     def __create_button(
@@ -199,82 +236,83 @@ class CommandControl(ControlSection):
         )
         return button
 
-    @staticmethod
-    def __check_button(button: QPushButton) -> None:
-        button.setProperty(CommandControl.CLASS, CommandControl.CHECK_BUTTON)
-        button.style().unpolish(button)
-        button.style().polish(button)
+    def activate_all_buttons(self) -> None:
+        for button in [
+            self.start_button,
+            self.payload_telemetry_on,
+            self.payload_telemetry_off,
+            self.set_gcs_time,
+            self.set_gps_time,
+            self.send_simulated_pressure,
+            self.calibrate_altitude,
+            self.mechanism_actuation_on,
+            self.mechanism_actuation_off,
+            self.reset_eeprom,
+        ]:
+            if (
+                ControlSection.is_button_checked(self.payload_telemetry_on)
+                and button == self.reset_eeprom
+            ):
+                continue
 
-    @staticmethod
-    def __uncheck_button(button: QPushButton) -> None:
-        button.setProperty(CommandControl.CLASS, "")
-        button.style().unpolish(button)
-        button.style().polish(button)
+            ControlSection.activate_button(button)
 
-    @staticmethod
-    def __flash_button(
-        button: QPushButton, selecting_file: bool = False
-    ) -> None:
-        if selecting_file:
-            button.setStyleSheet("")
-        button.setProperty(CommandControl.CLASS, CommandControl.FLASH_BUTTON)
-        button.style().unpolish(button)
-        button.style().polish(button)
-
-        QTimer.singleShot(
-            500,
-            lambda: CommandControl.__remove_flash(button, selecting_file),
-        )
-
-    @staticmethod
-    def __remove_flash(
-        button: QPushButton, selecting_file: bool = False
-    ) -> None:
-        if selecting_file:
-            button.setStyleSheet(CommandControl.SELECT_FILE_STYLESHEET)
-        button.setProperty(CommandControl.CLASS, "")
-        button.style().unpolish(button)
-        button.style().polish(button)
+    def deactivate_all_buttons(self) -> None:
+        for button in [
+            self.start_button,
+            self.payload_telemetry_on,
+            self.payload_telemetry_off,
+            self.set_gcs_time,
+            self.set_gps_time,
+            self.send_simulated_pressure,
+            self.calibrate_altitude,
+            self.reset_eeprom,
+            self.mechanism_actuation_on,
+            self.mechanism_actuation_off,
+        ]:
+            ControlSection.deactivate_button(button)
 
     def __press_enable_store(self) -> None:
-        CommandControl.__check_button(self.enable_store)
-        CommandControl.__uncheck_button(self.disable_store)
+        ControlSection.check_button(self.enable_store)
+        ControlSection.uncheck_button(self.disable_store)
 
         self.communication.enable_store()
 
     def __press_disable_store(self) -> None:
-        CommandControl.__uncheck_button(self.enable_store)
-        CommandControl.__check_button(self.disable_store)
+        ControlSection.uncheck_button(self.enable_store)
+        ControlSection.check_button(self.disable_store)
 
         self.communication.disable_store()
 
     def __press_payload_telemetry_on(self) -> None:
         try:
             self.communication.payload_telemetry(OnOff.ON)
-            CommandControl.__check_button(self.payload_telemetry_on)
-            CommandControl.__uncheck_button(self.payload_telemetry_off)
+            ControlSection.check_button(self.payload_telemetry_on)
+            ControlSection.uncheck_button(self.payload_telemetry_off)
+            ControlSection.deactivate_button(self.reset_eeprom)
         except SenderNotInitialisedException:
             return
 
     def __press_payload_telemetry_off(self) -> None:
         try:
             self.communication.payload_telemetry(OnOff.OFF)
-            CommandControl.__uncheck_button(self.payload_telemetry_on)
-            CommandControl.__check_button(self.payload_telemetry_off)
+            ControlSection.uncheck_button(self.payload_telemetry_on)
+            ControlSection.check_button(self.payload_telemetry_off)
+            ControlSection.activate_button(self.reset_eeprom)
         except SenderNotInitialisedException:
             return
 
     def __press_set_gcs_time(self) -> None:
         try:
             self.communication.set_time(TimeSource.GCS)
-            CommandControl.__flash_button(self.set_gcs_time)
+            ControlSection.flash_button(self.set_gcs_time)
         except SenderNotInitialisedException:
             return
 
     def __press_set_gps_time(self) -> None:
         try:
             self.communication.set_time(TimeSource.GPS)
-            CommandControl.__flash_button(self.set_gps_time)
+            ControlSection.flash_button(self.set_gps_time)
         except SenderNotInitialisedException:
             return
 
@@ -284,7 +322,7 @@ class CommandControl(ControlSection):
 
         try:
             self.communication.parse_simulate_pressure_file(self.file_contents)
-            CommandControl.__flash_button(self.send_simulated_pressure)
+            ControlSection.flash_button(self.send_simulated_pressure)
             self.select_simulated_pressure_file.setText("Select File")
         except SenderNotInitialisedException:
             return
@@ -292,14 +330,20 @@ class CommandControl(ControlSection):
     def __press_calibrate_altitude(self) -> None:
         try:
             self.communication.calibrate_altitude()
-            CommandControl.__flash_button(self.calibrate_altitude)
+            ControlSection.flash_button(self.calibrate_altitude)
         except SenderNotInitialisedException:
             return
 
     def __press_reset_eeprom(self) -> None:
+        if ControlSection.is_button_checked(self.payload_telemetry_on):
+            self.communication.logger.log(
+                "Cannot reset EEPROM while telemetry is on."
+            )
+            return
+
         try:
             self.communication.reset_eeprom()
-            CommandControl.__flash_button(self.reset_eeprom)
+            ControlSection.flash_button(self.reset_eeprom)
         except SenderNotInitialisedException:
             return
 
@@ -308,7 +352,7 @@ class CommandControl(ControlSection):
             self.communication.mechanism_actuation(
                 self.mechanism_selection.currentText(), OnOff.ON
             )
-            CommandControl.__flash_button(self.mechanism_actuation_on)
+            ControlSection.flash_button(self.mechanism_actuation_on)
         except SenderNotInitialisedException:
             return
 
@@ -317,14 +361,12 @@ class CommandControl(ControlSection):
             self.communication.mechanism_actuation(
                 self.mechanism_selection.currentText(), OnOff.OFF
             )
-            CommandControl.__flash_button(self.mechanism_actuation_off)
+            ControlSection.flash_button(self.mechanism_actuation_off)
         except SenderNotInitialisedException:
             return
 
     def __press_select_simulated_pressure_file(self) -> None:
-        CommandControl.__flash_button(
-            self.select_simulated_pressure_file, True
-        )
+        ControlSection.flash_button(self.select_simulated_pressure_file, True)
 
         options = QFileDialog.Option.ReadOnly
         file_name, _ = QFileDialog.getOpenFileName(
@@ -344,8 +386,17 @@ class CommandControl(ControlSection):
                 self.select_simulated_pressure_file.setText(
                     os.path.basename(file_name)
                 )
-                self.select_simulated_pressure_file.setStyleSheet(
-                    CommandControl.SELECTED_FILE_STYLESHEET
+                ControlSection.change_property(
+                    self.select_simulated_pressure_file,
+                    CommandControl.CLASS,
+                    CommandControl.SELECTED_FILE_BUTTON,
                 )
         except Exception as e:
             print(f"Failed to read file {file_name}: {e}")
+
+    def __press_start(self) -> None:
+        try:
+            self.communication.start()
+            ControlSection.flash_button(self.start_button)
+        except SenderNotInitialisedException:
+            return

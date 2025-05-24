@@ -114,7 +114,9 @@ class Header(QWidget):
 
     def __update_packet(self) -> None:
         self.packet_count = self.packet_count + 1
-        self.packet_label.setText(f"# of Packets Recieved: {self.packet_count}")
+        self.packet_label.setText(
+            f"# of Packets Recieved: {self.packet_count}"
+        )
 
     def update_device_connection_status(self, status: bool) -> None:
         self.device_connection_status_button.setChecked(status)

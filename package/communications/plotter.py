@@ -1,4 +1,3 @@
-from numpy import var
 import pandas as pd
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
@@ -53,17 +52,6 @@ class Plotter:
                 shutil.rmtree(self.log_dir)
             return False
 
-        self.data["TIME_PASSED"] = (
-            pd.to_datetime(
-                self.data[TelemetryFieldsCSVHeadings.MISSION_TIME.value],
-                format="%H:%M:%S",
-            )
-            - pd.to_datetime(
-                time_recieved_first_packet,
-                format="%H:%M:%S",
-            )
-        ).dt.total_seconds()
-
         return True
 
     def generate_plots(self, time_recieved_first_packet: str) -> None:
@@ -72,24 +60,28 @@ class Plotter:
 
         print("Generating plots...")
         for plot in Plotter.PLOTS_1_LINE:
-            self._plot_single_line(plot)
+            self.__plot_single_line(plot)
 
         for plot in Plotter.PLOTS_3_LINES:
-            self._plot_three_lines(plot)
+            self.__plot_three_lines(plot)
 
-    def _plot_single_line(self, plot: str) -> None:
+    def __plot_single_line(self, plot: str) -> None:
         plt.figure()
         variable = " ".join(word.capitalize() for word in plot.split("_"))
 
-        plt.plot(self.data["TIME_PASSED"], self.data[plot])
+        plt.plot(
+            self.data[TelemetryFieldsCSVHeadings.MISSION_TIME.value],
+            self.data[plot],
+        )
         plt.title(f"{variable} over Time")
-        plt.xlabel(f"Time Passed/s")
+        plt.xlabel("")
         plt.ylabel(f"{variable}/{self.__get_unit(plot)}")
         plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=self.NBINS))
+        plt.gca().set_xticklabels([])
         plt.savefig(f"{self.log_dir}{variable.replace(' ', '')}.png")
         plt.close()
 
-    def _plot_three_lines(self, plot: list) -> None:
+    def __plot_three_lines(self, plot: list) -> None:
         plt.figure()
         legend_labels = []
         variable = " ".join(
@@ -101,7 +93,10 @@ class Plotter:
             variable = "Magnetometer"
 
         for line in plot:
-            plt.plot(self.data["TIME_PASSED"], self.data[line])
+            plt.plot(
+                self.data[TelemetryFieldsCSVHeadings.MISSION_TIME.value],
+                self.data[line],
+            )
             if line.endswith("R"):
                 legend_labels.append(f"{variable} Roll")
             elif line.endswith("P"):
@@ -112,9 +107,10 @@ class Plotter:
                 legend_labels.append(line)
 
         plt.title(f"{variable} over Time")
-        plt.xlabel(f"Time Passed/s")
+        plt.xlabel("")
         plt.ylabel(f"{variable}/{self.__get_unit(plot[0])}")
         plt.gca().xaxis.set_major_locator(MaxNLocator(nbins=self.NBINS))
+        plt.gca().set_xticklabels([])
         plt.legend(legend_labels, loc="upper right")
         plt.savefig(f"{self.log_dir}{variable.replace(' ', '')}.png")
         plt.close()
