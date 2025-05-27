@@ -205,7 +205,18 @@ class TelemetryDisplay(QWidget):
         return container
 
     def __bold_label(self, field: TelemetryFields) -> str:
-        return f"<b>{field.value}:</b>"
+        return (
+            f"<b>{field.value}:</b>"
+            if not TelemetryFields.is_principal_axes(field)
+            else "".join(
+                [
+                    f"<b>{line}:</b><br>"
+                    for line in TelemetryFields.principal_axes_str(
+                        field
+                    ).split("\n")
+                ]
+            )[:-len("<br>")]
+        )
 
     def __update_label(
         self,
@@ -268,7 +279,7 @@ class TelemetryDisplay(QWidget):
             TelemetryUnits.VOLTAGE.value,
         )
         self.__update_label(
-            TelemetryFields.GYRO,
+            TelemetryFields.principal_axes_str(TelemetryFields.GYRO),
             telemetry.display_principal_axes_coordinate(telemetry.gyro),
             TelemetryUnits.GYRO.value,
         )

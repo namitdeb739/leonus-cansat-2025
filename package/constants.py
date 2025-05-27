@@ -1,3 +1,4 @@
+from __future__ import annotations
 from enum import Enum
 from package.models.app_info import AppInfo
 
@@ -48,6 +49,24 @@ class TelemetryFields(Enum):
     COMMAND_ECHO = "Command Echo"
     DESCENT_RATE = "Descent Rate"
     GEOGRAPHIC_HEADING = "Heading"
+
+    def is_principal_axes(self) -> bool:
+        return (
+            self == TelemetryFields.GYRO
+            or self == TelemetryFields.ACCELERATION
+            or self == TelemetryFields.MAGNETOMETER
+        )
+
+    @staticmethod
+    def principal_axes_str(telemetry_field: TelemetryFields) -> str:
+        if (
+            telemetry_field == TelemetryFields.GYRO
+            or telemetry_field == TelemetryFields.ACCELERATION
+            or telemetry_field == TelemetryFields.MAGNETOMETER
+        ):
+            return f"{telemetry_field.value} R\n{telemetry_field.value} P\n{telemetry_field.value} Y"
+        else:
+            return str(telemetry_field)
 
 
 class TelemetryFieldsCSVHeadings(Enum):
