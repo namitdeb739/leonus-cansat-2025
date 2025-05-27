@@ -38,3 +38,76 @@ The Cansat shall collect sensor data during ascent and descent and transmit the 
 | G14 | Because the ground station must be viewed in bright sunlight, the displays shall be designed with that in mind, including using larger fonts (14 point minimum), bold plot traces and axes, and a dark text on light background theme. |
 | G15 | The ground system shall count the number of received packets. Note that this number is not equivalent to the transmitted packet counter, but it is the count of packets successfully received at the ground station for the duration of the flight. |
 | G16 | The ground station shall be able to activate all mechanisms on command. |
+
+---
+
+## Installation & Setup
+
+This project is cross-platform and should work on Windows, macOS, and Linux. Some hardware (e.g., XBee radio) may require additional drivers or permissions depending on your OS.
+
+### Prerequisites
+
+- **Python 3.10+** installed and available in your PATH.
+- **XBee USB drivers** installed for your OS (see below).
+- **Invoke** (`invoke` Python package) for task automation.
+
+### 1. Clone the repository
+
+```sh
+git clone https://github.com/namitdeb739/leonus-cansat-2025.git
+cd leonus-cansat-2025
+```
+
+### 2. Install dependencies
+
+Use the provided `invoke` tasks to set up your environment.
+If you haven't installed `invoke`, do so with:
+
+```sh
+pip install invoke
+```
+
+Then, to install all Python dependencies:
+
+```sh
+invoke install
+```
+
+### 3. Install XBee USB drivers
+
+- **Windows:** Download and install from [Digi XBee Drivers](https://www.digi.com/support/knowledge-base/xctu-drivers).
+- **macOS/Linux:** Usually plug-and-play. On Linux, you may need to add your user to the `dialout` group:
+
+  ```sh
+  sudo usermod -a -G dialout $USER
+  ```
+
+### 4. Running the Application
+
+To start the ground station in laptop mode:
+
+```sh
+invoke runlaptop
+```
+
+Or in monitor mode:
+
+```sh
+invoke runmonitor
+```
+
+### 5. Development Utilities
+
+To auto-restart the application on file changes (for development):
+
+```sh
+invoke watch --mode=laptop
+```
+
+### Notes
+
+- If you encounter issues with serial ports or XBee communication, check your OS's device manager (Windows) or `/dev/tty*` (macOS/Linux).
+- For Windows, ensure you use the correct COM port name (e.g., `COM3`).
+- All dependencies are listed in `requirements.txt` and are installed via `invoke install`.
+
+---

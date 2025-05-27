@@ -32,20 +32,42 @@ class CommandControl(ControlSection):
         self.__setup_layout()
 
     def __initialize_buttons(self) -> None:
-        self.__initialise_start_button()
+        self.__initialise_start_and_reset_button()
         self.__initialise_store_buttons()
         self.__initialise_set_time_buttons()
         self.__initialise_payload_telemetry_buttons()
         self.__initialise_simulated_pressure_buttons()
-        self.__initialise_calibration_and_reset_buttons()
+        self.__initialise_calibration_buttons()
         self.__initialise_mechanism_actuation_buttons()
 
-    def __initialise_start_button(self) -> None:
+        self.activatable_buttons = [
+            self.start_button,
+            self.calibrate_imu,
+            self.payload_telemetry_on,
+            self.payload_telemetry_off,
+            self.set_gcs_time,
+            self.set_gps_time,
+            self.send_simulated_pressure,
+            self.calibrate_altitude,
+            self.mechanism_actuation_on,
+            self.mechanism_actuation_off,
+            self.reset_eeprom,
+        ]
+
+    def __initialise_start_and_reset_button(self) -> None:
         self.start_button = self.__create_button(
             "Start",
             self.__press_start,
         )
+        self.reset_eeprom = self.__create_button(
+            "Reset Telemetry",
+            self.__press_reset_eeprom,
+        )
+
         ControlSection.deactivate_button(self.start_button)
+        ControlSection.deactivate_button(
+            self.reset_eeprom,
+        )
 
     def __initialise_mechanism_actuation_buttons(self) -> None:
         self.mechanism_selection = QComboBox()
@@ -76,21 +98,20 @@ class CommandControl(ControlSection):
             self.mechanism_actuation_off,
         )
 
-    def __initialise_calibration_and_reset_buttons(self) -> None:
+    def __initialise_calibration_buttons(self) -> None:
         self.calibrate_altitude = self.__create_button(
             "Set Alt. To Zero",
             self.__press_calibrate_altitude,
         )
-
-        self.reset_eeprom = self.__create_button(
-            "Reset Telemetry",
-            lambda: self.__press_reset_eeprom(),
+        self.calibrate_imu = self.__create_button(
+            "Calibrate IMU",
+            self.__calibrate_imu,
         )
         ControlSection.deactivate_button(
             self.calibrate_altitude,
         )
         ControlSection.deactivate_button(
-            self.reset_eeprom,
+            self.calibrate_imu,
         )
 
     def __initialise_simulated_pressure_buttons(self) -> None:
@@ -155,7 +176,7 @@ class CommandControl(ControlSection):
 
     def __setup_layout(self) -> None:
         command_controls = {
-            "Start": [self.start_button],
+            "Start/Reset": [self.start_button, self.reset_eeprom],
             "Store": [self.enable_store, self.disable_store],
             "Payload Telemetry": [
                 self.payload_telemetry_on,
@@ -166,7 +187,7 @@ class CommandControl(ControlSection):
                 self.select_simulated_pressure_file,
                 self.send_simulated_pressure,
             ],
-            "Calibrate/Reset": [self.calibrate_altitude, self.reset_eeprom],
+            "Calibrate": [self.calibrate_altitude, self.calibrate_imu],
             self.mechanism_selection: [
                 self.mechanism_actuation_on,
                 self.mechanism_actuation_off,
@@ -237,18 +258,7 @@ class CommandControl(ControlSection):
         return button
 
     def activate_all_buttons(self) -> None:
-        for button in [
-            self.start_button,
-            self.payload_telemetry_on,
-            self.payload_telemetry_off,
-            self.set_gcs_time,
-            self.set_gps_time,
-            self.send_simulated_pressure,
-            self.calibrate_altitude,
-            self.mechanism_actuation_on,
-            self.mechanism_actuation_off,
-            self.reset_eeprom,
-        ]:
+        for button in self.activatable_buttons:
             if (
                 ControlSection.is_button_checked(self.payload_telemetry_on)
                 and button == self.reset_eeprom
@@ -258,18 +268,7 @@ class CommandControl(ControlSection):
             ControlSection.activate_button(button)
 
     def deactivate_all_buttons(self) -> None:
-        for button in [
-            self.start_button,
-            self.payload_telemetry_on,
-            self.payload_telemetry_off,
-            self.set_gcs_time,
-            self.set_gps_time,
-            self.send_simulated_pressure,
-            self.calibrate_altitude,
-            self.reset_eeprom,
-            self.mechanism_actuation_on,
-            self.mechanism_actuation_off,
-        ]:
+        for button in self.activatable_buttons:
             ControlSection.deactivate_button(button)
 
     def __press_enable_store(self) -> None:
@@ -398,5 +397,12 @@ class CommandControl(ControlSection):
         try:
             self.communication.start()
             ControlSection.flash_button(self.start_button)
+        except SenderNotInitialisedException:
+            return
+
+    def __calibrate_imu(self) -> None:
+        try:
+            self.communication.calibrate_imu()
+            ControlSection.flash_button(self.calibrate_imu)
         except SenderNotInitialisedException:
             return

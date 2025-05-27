@@ -1,4 +1,3 @@
-from math import nan
 from PyQt6.QtWidgets import (
     QWidget,
     QLabel,
@@ -7,8 +6,7 @@ from PyQt6.QtWidgets import (
     QSizePolicy,
 )
 from PyQt6.QtCore import Qt
-from numpy import roll
-from package.models.telemetry import Mode, State, Telemetry
+from package.models.telemetry import Telemetry
 from PyQt6.QtGui import QGuiApplication
 from package.constants import TelemetryFields, TelemetryUnits
 
@@ -215,7 +213,7 @@ class TelemetryDisplay(QWidget):
                         field
                     ).split("\n")
                 ]
-            )[:-len("<br>")]
+            )[: -len("<br>")]
         )
 
     def __update_label(

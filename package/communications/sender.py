@@ -64,6 +64,9 @@ class Sender:
     def calibrate_altitude(self) -> None:
         self.__send("CAL")
 
+    def calibrate_imu(self) -> None:
+        self.__send("CALIMU")
+
     def reset_eeprom(self) -> None:
         self.__send("RST")
 

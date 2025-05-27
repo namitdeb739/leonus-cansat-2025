@@ -226,6 +226,16 @@ class Communication:
 
         self.sender.reset_eeprom()
 
+    def calibrate_imu(self) -> None:
+        if not self.sender:
+            self.logger.log(
+                Communication.SENDER_NOT_INITIALISED_MESSAGE
+                % "calibrate IMU"
+            )
+            raise SenderNotInitialisedException()
+
+        self.sender.calibrate_imu()
+
     def mechanism_actuation(self, device: str, on_off: OnOff) -> None:
         if not self.sender:
             self.logger.log(
