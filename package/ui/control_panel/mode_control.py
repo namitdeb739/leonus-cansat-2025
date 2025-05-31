@@ -1,3 +1,4 @@
+from tkinter.tix import Control
 from PyQt6.QtWidgets import (
     QWidget,
     QPushButton,
@@ -20,6 +21,7 @@ class ModeControl(ControlSection):
 
     def __init__(self, communication: Communication) -> None:
         super().__init__()
+        self.command_control = None
         self.communication = communication
 
         self.activate_flight_mode = self.__create_button(
@@ -35,6 +37,8 @@ class ModeControl(ControlSection):
             self.__press_activate_simulation_mode,
             lock=True,
         )
+        # ControlSection.deactivate_button(self.activate_flight_mode)
+        # ControlSection.deactivate_button(self.enable_simulation_mode)
         ControlSection.deactivate_button(self.activate_simulation_mode)
 
         self.__setup_layout()
@@ -96,12 +100,18 @@ class ModeControl(ControlSection):
 
     def __press_activate_flight_mode(self) -> None:
         try:
+            # if self.parent():
+            #     print("AAAA")
+            #     print(self.parent().n)
             self.communication.simulation_mode_control(SimulationMode.DISABLE)
             ControlSection.check_button(self.activate_flight_mode)
             ControlSection.uncheck_button(self.activate_simulation_mode)
             ControlSection.uncheck_button(self.enable_simulation_mode)
             ControlSection.deactivate_button(self.activate_simulation_mode)
             self.activate_simulation_mode.setEnabled(False)
+
+            self.command_control.deactivate_simulated_pressure()
+            self.command_control.activate_reset_telemetry()
         except SenderNotInitialisedException:
             return
 
@@ -119,12 +129,30 @@ class ModeControl(ControlSection):
             self.communication.simulation_mode_control(SimulationMode.ACTIVATE)
             ControlSection.check_button(self.activate_simulation_mode)
             ControlSection.uncheck_button(self.activate_flight_mode)
+
+            self.command_control.activate_simulated_pressure()
+            self.command_control.deactivate_reset_telemetry()
         except SenderNotInitialisedException:
             return
 
     def is_simulation_mode(self) -> bool:
         return (
-            self.enable_simulation_mode.isChecked()
-            and self.activate_simulation_mode.isChecked()
-            and not self.activate_flight_mode.isChecked()
+            ControlSection.is_button_checked(self.enable_simulation_mode)
+            and ControlSection.is_button_checked(self.activate_simulation_mode)
+            and not ControlSection.is_button_checked(self.activate_flight_mode)
         )
+
+    def set_command_control(self, command_control: ControlSection) -> None:
+        self.command_control = command_control
+
+    def activate_all_buttons(self) -> None:
+        ControlSection.activate_button(self.activate_flight_mode)
+        ControlSection.activate_button(self.enable_simulation_mode)
+
+        if ControlSection.is_button_checked(self.enable_simulation_mode):
+            ControlSection.activate_button(self.activate_simulation_mode)
+
+    def deactivate_all_buttons(self) -> None:
+        ControlSection.deactivate_button(self.activate_flight_mode)
+        ControlSection.deactivate_button(self.enable_simulation_mode)
+        ControlSection.deactivate_button(self.activate_simulation_mode)

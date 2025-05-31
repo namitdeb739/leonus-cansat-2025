@@ -222,7 +222,13 @@ class TelemetryDisplay(QWidget):
         value: str | tuple[str, str, str],
         unit: str,
     ) -> None:
-        _, value_label = self.labels[field]
+        _, value_label = self.labels[
+            (
+                TelemetryFields(field.split()[0])
+                if isinstance(field, str)
+                else field
+            )
+        ]
         if isinstance(value, tuple):
             roll, pitch, yaw = value
             value_label.setText(

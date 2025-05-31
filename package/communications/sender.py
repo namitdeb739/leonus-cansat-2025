@@ -56,6 +56,7 @@ class Sender:
         self.__send(f"ST, {time}")
 
     def simulation_mode_control(self, mode: SimulationMode) -> None:
+        self.simulated_pressure_commands = []
         self.__send(f"SIM, {mode}")
 
     def simulate_pressure(self, pressure: float) -> None:
@@ -74,16 +75,25 @@ class Sender:
         self.__send(f"MEC, {device}, {on_off}")
 
     def send_next_simulated_pressure(self) -> None:
-        if not self.simulated_pressure_commands:
+        if (
+            not self.simulated_pressure_commands
+            or len(self.simulated_pressure_commands) == 0
+        ):
             return
 
         self.__send(self.simulated_pressure_commands.pop(0))
+
+        if len(self.simulated_pressure_commands) == 0:
+            self.logger.log("All simulated pressure commands have been sent.")
 
     def set_logger(self, logger: Log) -> None:
         self.logger = logger
 
     def has_simulated_pressure(self) -> bool:
-        return self.simulated_pressure_commands is not None
+        return (
+            self.simulated_pressure_commands is not None
+            and len(self.simulated_pressure_commands) > 0
+        )
 
     def set_simulated_pressure_commands(
         self, simulated_pressure_commands: list[str]

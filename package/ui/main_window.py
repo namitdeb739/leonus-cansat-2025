@@ -3,8 +3,6 @@ from PyQt6.QtWidgets import (
     QMainWindow,
     QWidget,
     QVBoxLayout,
-    QSpacerItem,
-    QSizePolicy,
 )
 from PyQt6.QtCore import Qt, QRect
 from package.communications.communication import Communication
@@ -88,8 +86,8 @@ class MainWindow(QMainWindow):
     def update_time(self) -> None:
         self.header.update_time()
 
-    def activate_command_control(self) -> None:
-        self.body.activate_command_control()
+    def activate_control_panel(self) -> None:
+        self.body.activate_control_panel()
 
-    def deactivate_command_control(self) -> None:
-        self.body.deactivate_command_control()
+    def deactivate_control_panel(self) -> None:
+        self.body.deactivate_control_panel()

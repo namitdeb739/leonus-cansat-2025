@@ -1,4 +1,3 @@
-from re import S
 from PyQt6.QtWidgets import (
     QWidget,
     QHBoxLayout,
@@ -88,8 +87,8 @@ class Body(QWidget):
     def is_simulation_mode(self) -> bool:
         return self.control_panel.is_simulation_mode()
 
-    def activate_command_control(self) -> None:
-        self.control_panel.activate_command_control()
+    def activate_control_panel(self) -> None:
+        self.control_panel.activate()
 
-    def deactivate_command_control(self) -> None:
-        self.control_panel.deactivate_command_control()
+    def deactivate_control_panel(self) -> None:
+        self.control_panel.deactivate()

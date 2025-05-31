@@ -14,6 +14,7 @@ from .command_control import CommandControl
 class ControlPanel(QWidget):
     def __init__(self, communication: Communication) -> None:
         super().__init__()
+        # self.n = "hello"
         self.mode_control = None
         self.command_control = None
 
@@ -22,6 +23,7 @@ class ControlPanel(QWidget):
         )
 
         self.__setup_layout(communication)
+        self.__set_control_cross_reference()
 
     def __setup_layout(self, communication: Communication) -> None:
         layout = QVBoxLayout()
@@ -55,8 +57,14 @@ class ControlPanel(QWidget):
     def is_simulation_mode(self) -> bool:
         return self.mode_control.is_simulation_mode()
 
-    def activate_command_control(self) -> None:
+    def activate(self) -> None:
         self.command_control.activate_all_buttons()
+        self.mode_control.activate_all_buttons()
 
-    def deactivate_command_control(self) -> None:
+    def deactivate(self) -> None:
         self.command_control.deactivate_all_buttons()
+        self.mode_control.deactivate_all_buttons()
+
+    def __set_control_cross_reference(self) -> None:
+        self.mode_control.set_command_control(self.command_control)
+        self.command_control.set_mode_control(self.mode_control)

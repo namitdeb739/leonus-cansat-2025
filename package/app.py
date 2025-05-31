@@ -56,64 +56,14 @@ class App(QApplication):
 
     def __update(self) -> None:
         if self.communication.sender_initialised():
-            self.main_window.activate_command_control()
+            self.main_window.activate_control_panel()
         else:
-            self.main_window.deactivate_command_control()
+            self.main_window.deactivate_control_panel()
 
         self.update_call_count = (self.update_call_count + 1) % (
             App.ONE_SECOND // App.TIMER_INTERVAL
         )
         self.main_window.update_time()
-
-        # TEST ZONE START
-        """ if self.last == datetime.now().strftime("%H:%M:%S"):
-            return
-        self.last = datetime.now().strftime("%H:%M:%S")
-        self.packet_count += 1
-        t = Telemetry(
-            team_id=APP_INFO.team_id(),
-
-            mission_time=datetime.now().strftime("%H:%M:%S"),
-            packet_count=self.packet_count,
-            mode=random.choice(list(Mode)),
-            state=random.choice(list(State)),
-            altitude=round(random.uniform(0, 10000), 1),
-            temperature=round(random.uniform(-50, 50), 1),
-            pressure=round(random.uniform(900, 1100), 1),
-            voltage=round(random.uniform(3.0, 4.2), 1),
-            gyro=PrincipalAxesCoordinate(
-                roll=round(random.uniform(-180, 180), 1),
-                pitch=round(random.uniform(-180, 180), 1),
-                yaw=round(random.uniform(-180, 180), 1),
-            ),
-            acceleration=PrincipalAxesCoordinate(
-                roll=round(random.uniform(100, 999), 1),
-                pitch=round(random.uniform(100, 999), 1),
-                yaw=round(random.uniform(100, 999), 1),
-            ),
-            magnetometer=PrincipalAxesCoordinate(
-                    roll=round(random.uniform(100, 999), 1),
-                pitch=round(random.uniform(100, 999), 1),
-                yaw=round(random.uniform(100, 999), 1),
-            ),
-            auto_gyro_rotation_rate=random.randint(0, 360),
-            gps=GPS(
-                time=datetime.now().strftime("%H:%M:%S"),
-                altitude=round(random.uniform(0, 10000), 1),
-                latitude=round(random.uniform(-90, 90), 1),
-                longitude=round(random.uniform(-180, 180), 1),
-                sats=random.randint(0, 12),
-            ),
-            cmd_echo=Command.command(
-                Command.CommandType.PAYLOAD_TELEMETRY, OnOff.ON
-            ),
-            descent_rate=round(random.uniform(0, 50), 1),
-            geographic_heading=random.randint(0, 360),
-        )
-
-        self.main_window.update(t)
-        self.communication.save(t) """
-        # TEST ZONE END
 
         if not self.__check_connection():
             return
@@ -137,12 +87,23 @@ class App(QApplication):
                 f"Telemetry packet count mismatch: {self.last_recieved_packet} -> {telemetry.packet_count}. Missing packets {[i for i in range(self.last_recieved_packet + 1, telemetry.packet_count)]}"
             )
 
+        if self.__package_backwards_detected(telemetry):
+            self.logger.log(
+                f"Telemetry packet count backwards: {self.last_recieved_packet} -> {telemetry.packet_count}. Resetting telemetry packet number."
+            )
+
         self.main_window.update(telemetry)
         self.communication.save(telemetry)
         self.last_recieved_packet = telemetry.packet_count
 
     def __package_drop_detected(self, telemetry: Telemetry) -> bool:
-        return abs(telemetry.packet_count - self.last_recieved_packet) > 1
+        return telemetry.packet_count - self.last_recieved_packet > 1
+
+    def __package_backwards_detected(self, telemetry: Telemetry) -> bool:
+        return (
+            telemetry.packet_count < self.last_recieved_packet
+            and telemetry.packet_count != 0
+        )
 
     def __check_connection(self) -> bool:
         if not self.communication.device_is_connected():

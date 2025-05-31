@@ -23,7 +23,7 @@ from package.ui.log.log import Log
 
 class Communication:
     BAUD_RATE = 9600
-    REMOTE_NODE_ID = "PAYLOAD"
+    REMOTE_NODE_ID = "LEONUS_PAYLOAD"
     SENDER_NOT_INITIALISED_MESSAGE = (
         "Sender is not initialised or not connected. Cannot %s."
     )
@@ -255,11 +255,11 @@ class Communication:
             raise SenderNotInitialisedException()
 
         simulated_pressure_commands = [
-            pressure_command.split(",")[0]
-            + ", "
-            + str(constants.APP_INFO.team_id())
-            + ", "
-            + pressure_command.split(",")[2]
+            # pressure_command.split(",")[0]
+            # + ", "
+            # + str(constants.APP_INFO.team_id())
+            # + ", "
+            pressure_command.split(",")[2]
             + ", "
             + pressure_command.split(",")[3]
             for pressure_command in file_contents.splitlines()

@@ -25,6 +25,7 @@ class CommandControl(ControlSection):
 
     def __init__(self, communication: Communication):
         super().__init__()
+        self.mode_control = None
         self.communication = communication
         self.file_contents = None
 
@@ -42,12 +43,12 @@ class CommandControl(ControlSection):
 
         self.activatable_buttons = [
             self.start_button,
-            self.calibrate_imu,
+            # self.calibrate_imu,
             self.payload_telemetry_on,
             self.payload_telemetry_off,
             self.set_gcs_time,
             self.set_gps_time,
-            self.send_simulated_pressure,
+            # self.send_simulated_pressure,
             self.calibrate_altitude,
             self.mechanism_actuation_on,
             self.mechanism_actuation_off,
@@ -103,16 +104,16 @@ class CommandControl(ControlSection):
             "Set Alt. To Zero",
             self.__press_calibrate_altitude,
         )
-        self.calibrate_imu = self.__create_button(
-            "Calibrate IMU",
-            self.__calibrate_imu,
-        )
+        # self.calibrate_imu = self.__create_button(
+        #     "Calibrate IMU",
+        #     self.__calibrate_imu,
+        # )
         ControlSection.deactivate_button(
             self.calibrate_altitude,
         )
-        ControlSection.deactivate_button(
-            self.calibrate_imu,
-        )
+        # ControlSection.deactivate_button(
+        #     self.calibrate_imu,
+        # )
 
     def __initialise_simulated_pressure_buttons(self) -> None:
         self.send_simulated_pressure = self.__create_button(
@@ -177,7 +178,6 @@ class CommandControl(ControlSection):
     def __setup_layout(self) -> None:
         command_controls = {
             "Start/Reset": [self.start_button, self.reset_eeprom],
-            "Store": [self.enable_store, self.disable_store],
             "Payload Telemetry": [
                 self.payload_telemetry_on,
                 self.payload_telemetry_off,
@@ -187,11 +187,12 @@ class CommandControl(ControlSection):
                 self.select_simulated_pressure_file,
                 self.send_simulated_pressure,
             ],
-            "Calibrate": [self.calibrate_altitude, self.calibrate_imu],
+            "Calibrate": [self.calibrate_altitude],
             self.mechanism_selection: [
                 self.mechanism_actuation_on,
                 self.mechanism_actuation_off,
             ],
+            "Store": [self.enable_store, self.disable_store],
         }
 
         layout = QGridLayout()
@@ -261,6 +262,7 @@ class CommandControl(ControlSection):
         for button in self.activatable_buttons:
             if (
                 ControlSection.is_button_checked(self.payload_telemetry_on)
+                and self.mode_control.is_simulation_mode()
                 and button == self.reset_eeprom
             ):
                 continue
@@ -323,6 +325,11 @@ class CommandControl(ControlSection):
             self.communication.parse_simulate_pressure_file(self.file_contents)
             ControlSection.flash_button(self.send_simulated_pressure)
             self.select_simulated_pressure_file.setText("Select File")
+            ControlSection.change_property(
+                self.select_simulated_pressure_file,
+                CommandControl.CLASS,
+                CommandControl.SELECT_FILE_BUTTON,
+            )
         except SenderNotInitialisedException:
             return
 
@@ -400,9 +407,24 @@ class CommandControl(ControlSection):
         except SenderNotInitialisedException:
             return
 
-    def __calibrate_imu(self) -> None:
-        try:
-            self.communication.calibrate_imu()
-            ControlSection.flash_button(self.calibrate_imu)
-        except SenderNotInitialisedException:
-            return
+    def set_mode_control(self, mode_control: ControlSection) -> None:
+        self.mode_control = mode_control
+
+    def activate_simulated_pressure(self) -> None:
+        ControlSection.activate_button(self.send_simulated_pressure)
+
+    def deactivate_simulated_pressure(self) -> None:
+        ControlSection.deactivate_button(self.send_simulated_pressure)
+
+    def activate_reset_telemetry(self):
+        ControlSection.activate_button(self.reset_eeprom)
+
+    def deactivate_reset_telemetry(self):
+        ControlSection.deactivate_button(self.reset_eeprom)
+
+    # def __calibrate_imu(self) -> None:
+    #     try:
+    #         self.communication.calibrate_imu()
+    #         ControlSection.flash_button(self.calibrate_imu)
+    #     except SenderNotInitialisedException:
+    #         return

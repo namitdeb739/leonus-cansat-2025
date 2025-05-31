@@ -101,3 +101,18 @@ class ControlSection(QWidget):
             button.property(ControlSection.CLASS)
             == ControlSection.CHECK_BUTTON
         )
+
+    def activate_simulated_pressure(self) -> None:
+        pass
+
+    def deactivate_simulated_pressure(self) -> None:
+        pass
+
+    def activate_reset_telemetry(self) -> None:
+        pass
+
+    def deactivate_reset_telemetry(self) -> None:
+        pass
+
+    def is_simulation_mode(self) -> bool:
+        pass
