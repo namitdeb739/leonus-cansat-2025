@@ -38,7 +38,7 @@ class TelemetryFields(Enum):
     PRESSURE = "Pressure"
     VOLTAGE = "Voltage"
     GYRO = "Gyro"
-    GYRO_ROTATION_RATE = "Gyro Rotation Rate"
+    GYRO_ROTATION_RATE = "Gyro Rot. Rate"
     ACCELERATION = "Acceleration"
     MAGNETOMETER = "Magnetometer"
     GPS_TIME = "GPS Time"

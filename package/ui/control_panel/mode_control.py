@@ -1,4 +1,3 @@
-from tkinter.tix import Control
 from PyQt6.QtWidgets import (
     QWidget,
     QPushButton,
@@ -111,7 +110,7 @@ class ModeControl(ControlSection):
             self.activate_simulation_mode.setEnabled(False)
 
             self.command_control.deactivate_simulated_pressure()
-            self.command_control.activate_reset_telemetry()
+            self.command_control.activate_reset()
         except SenderNotInitialisedException:
             return
 
@@ -131,7 +130,7 @@ class ModeControl(ControlSection):
             ControlSection.uncheck_button(self.activate_flight_mode)
 
             self.command_control.activate_simulated_pressure()
-            self.command_control.deactivate_reset_telemetry()
+            self.command_control.deactivate_reset()
         except SenderNotInitialisedException:
             return
 

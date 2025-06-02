@@ -61,7 +61,7 @@ class CommandControl(ControlSection):
             self.__press_start,
         )
         self.reset_eeprom = self.__create_button(
-            "Reset Telemetry",
+            "Reset EEPROM",
             self.__press_reset_eeprom,
         )
 
@@ -82,7 +82,15 @@ class CommandControl(ControlSection):
             CommandControl.CLASS,
             CommandControl.MECHANISM_SELECTION,
         )
-        self.mechanism_selection
+        self.mechanism_selection.currentTextChanged.connect(
+            self.__on_mechanism_selection_changed
+        )
+
+        self.mechanism_states: dict[str, OnOff] = {}
+        for i in range(self.mechanism_selection.count()):
+            self.mechanism_states[self.mechanism_selection.itemText(i)] = (
+                OnOff.OFF
+            )
 
         self.mechanism_actuation_on = self.__create_button(
             "On",
@@ -96,6 +104,9 @@ class CommandControl(ControlSection):
             self.mechanism_actuation_on,
         )
         ControlSection.deactivate_button(
+            self.mechanism_actuation_off,
+        )
+        ControlSection.check_button(
             self.mechanism_actuation_off,
         )
 
@@ -262,9 +273,8 @@ class CommandControl(ControlSection):
         for button in self.activatable_buttons:
             if (
                 ControlSection.is_button_checked(self.payload_telemetry_on)
-                and self.mode_control.is_simulation_mode()
-                and button == self.reset_eeprom
-            ):
+                or self.mode_control.is_simulation_mode()
+            ) and button == self.reset_eeprom:
                 continue
 
             ControlSection.activate_button(button)
@@ -353,12 +363,27 @@ class CommandControl(ControlSection):
         except SenderNotInitialisedException:
             return
 
+    def __on_mechanism_selection_changed(self, mechanism: str) -> None:
+        if mechanism not in self.mechanism_states:
+            return
+
+        if self.mechanism_states[mechanism] == OnOff.ON:
+            ControlSection.activate_button(self.mechanism_actuation_off)
+            ControlSection.deactivate_button(self.mechanism_actuation_on)
+        else:
+            ControlSection.activate_button(self.mechanism_actuation_on)
+            ControlSection.deactivate_button(self.mechanism_actuation_off)
+
     def __press_mechanism_actuation_on(self) -> None:
         try:
             self.communication.mechanism_actuation(
                 self.mechanism_selection.currentText(), OnOff.ON
             )
-            ControlSection.flash_button(self.mechanism_actuation_on)
+            ControlSection.check_button(self.mechanism_actuation_on)
+            ControlSection.uncheck_button(self.mechanism_actuation_off)
+            self.mechanism_states[self.mechanism_selection.currentText()] = (
+                OnOff.ON
+            )
         except SenderNotInitialisedException:
             return
 
@@ -367,7 +392,11 @@ class CommandControl(ControlSection):
             self.communication.mechanism_actuation(
                 self.mechanism_selection.currentText(), OnOff.OFF
             )
-            ControlSection.flash_button(self.mechanism_actuation_off)
+            ControlSection.check_button(self.mechanism_actuation_off)
+            ControlSection.uncheck_button(self.mechanism_actuation_on)
+            self.mechanism_states[self.mechanism_selection.currentText()] = (
+                OnOff.OFF
+            )
         except SenderNotInitialisedException:
             return
 
@@ -416,10 +445,10 @@ class CommandControl(ControlSection):
     def deactivate_simulated_pressure(self) -> None:
         ControlSection.deactivate_button(self.send_simulated_pressure)
 
-    def activate_reset_telemetry(self):
+    def activate_reset(self):
         ControlSection.activate_button(self.reset_eeprom)
 
-    def deactivate_reset_telemetry(self):
+    def deactivate_reset(self):
         ControlSection.deactivate_button(self.reset_eeprom)
 
     # def __calibrate_imu(self) -> None:

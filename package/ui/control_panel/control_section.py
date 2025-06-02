@@ -108,10 +108,10 @@ class ControlSection(QWidget):
     def deactivate_simulated_pressure(self) -> None:
         pass
 
-    def activate_reset_telemetry(self) -> None:
+    def activate_reset(self) -> None:
         pass
 
-    def deactivate_reset_telemetry(self) -> None:
+    def deactivate_reset(self) -> None:
         pass
 
     def is_simulation_mode(self) -> bool:

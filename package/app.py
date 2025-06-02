@@ -41,7 +41,7 @@ class App(QApplication):
 
         atexit.register(self.on_exit)
 
-        self.last_recieved_packet = -1
+        self.last_recieved_packet = 0
 
     def run(self) -> int:
         self.main_window.show()

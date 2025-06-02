@@ -5,24 +5,49 @@ import pyqtgraph as pg
 from package.constants import Colours
 
 
+class CommaAxis(pg.AxisItem):
+    def tickStrings(
+        self, values: list[float], scale: float, spacing: float
+    ) -> list[str]:
+        return [
+            f"{int(value):,}" if value == int(value) else f"{value:,.1f}"
+            for value in values
+        ]
+
+
 class Graph(pg.PlotItem):
     LINE_COLOUR_ORDER = [Colours.RED, Colours.GREEN, Colours.NUS_BLUE]
     TIME_VIEW = 120
     PEN_WIDTH = 3
+    LEFT = "left"
+    BOTTOM = "bottom"
+    FONT = "Arial"
     LABEL_FONT_SIZE = "12pt"
+    AXIS_FONT_SIZE = 12
     LABEL_DEFAULT_TEXT = "NIL"
     X_RANGE_PADDING = 1.25
     Y_RANGE_PADDING = 1.25
-    LABEL_VERTICAL_SPACING = -0.2
-    LABEL_HORIZONTAL_SPACING = 0.06
-    LABEL_VERTICAL_OFFSET = -0.5
-    LABEL_HORIZONTAL_OFFSET = 0.1
+    LABEL_HORIZONTAL_SPACING = 0
+    LABEL_HORIZONTAL_OFFSET = -0.5
+    LABEL_VERTICAL_OFFSET = 30
+    LABEL_VERTICAL_SPACING = 15
 
     def __init__(self, title: str, line_names: Iterable[str]) -> None:
         super().__init__(
             name=title,
             title=self.__format_title(title),
             viewBox=pg.ViewBox(border=Colours.RICH_BLACK.value),
+            axisItems={
+                Graph.BOTTOM: CommaAxis(orientation=Graph.BOTTOM),
+                Graph.LEFT: CommaAxis(orientation=Graph.LEFT),
+            },
+        )
+
+        self.getAxis(Graph.LEFT).setStyle(
+            tickFont=pg.QtGui.QFont(Graph.FONT, Graph.AXIS_FONT_SIZE)
+        )
+        self.getAxis(Graph.BOTTOM).setStyle(
+            tickFont=pg.QtGui.QFont(Graph.FONT, Graph.AXIS_FONT_SIZE)
         )
 
         self.setSizePolicy(
@@ -33,9 +58,9 @@ class Graph(pg.PlotItem):
         self.pointer = 0
         self.num_lines = len(line_names)
         self.line_names = list(line_names)
-        self.graph_plots = []
-        self.graph_data = []
-        self.graph_value_labels = []
+        self.graph_plots: list[pg.PlotDataItem] = []
+        self.graph_data: list[np.ndarray] = []
+        self.graph_value_labels: list[pg.LabelItem] = []
 
         self.getViewBox().setXRange(
             self.pointer, self.pointer + Graph.TIME_VIEW
@@ -77,19 +102,19 @@ class Graph(pg.PlotItem):
             size=Graph.LABEL_FONT_SIZE,
         )
         label.setParentItem(self.graphicsItem())
+        self.__anchor_label(index, label)
+        return label
+
+    def __anchor_label(self, index: int, label: pg.LabelItem) -> None:
         label.anchor(
-            itemPos=(
-                1,
+            itemPos=(1, 0),
+            parentPos=(1, 0),
+            offset=(
+                Graph.LABEL_HORIZONTAL_OFFSET,
                 Graph.LABEL_VERTICAL_OFFSET
                 + index * Graph.LABEL_VERTICAL_SPACING,
             ),
-            parentPos=(
-                1,
-                Graph.LABEL_HORIZONTAL_OFFSET
-                + index * Graph.LABEL_HORIZONTAL_SPACING,
-            ),
         )
-        return label
 
     def update(self, values: list[float]) -> None:
         if any(len(data) > Graph.TIME_VIEW for data in self.graph_data):
@@ -126,3 +151,5 @@ class Graph(pg.PlotItem):
             self.graph_value_labels[i].setText(
                 f"{self.line_names[i]}: {f"{value:,}" if value != nan else "NaN"}"
             )
+
+            self.__anchor_label(i, self.graph_value_labels[i])
